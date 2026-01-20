@@ -25,8 +25,6 @@ public class MqttTest {
     
     // 알림 종류별로 마지막 발생 시간을 기록할 장부
     static java.util.Map<String, Long> lastAlertTimeMap = new java.util.HashMap<>();
-    // 알림 간격 설정 (10분)
-    static final long ALERT_INTERVAL = 10 * 60 * 1000;
 
     public static void main(String[] args) {
         try {
@@ -80,10 +78,20 @@ public class MqttTest {
 
                         // [피플 카운터]
                         if (json.has("region_trigger_data")) {
-                            JSONArray regions = json.getJSONObject("region_trigger_data").getJSONArray("region_count_data");
+                            JSONObject regionData = json.getJSONObject("region_trigger_data");
+                            JSONArray regions = regionData.getJSONArray("region_count_data");
+                            
                             if (regions.length() > 0) {
-                                saveToDb(0, "PEOPLE_IN", 1.0);
-                                updateVisitorStats(); 
+                                // 첫 번째 영역의 실제 인원수(current_total)를 가져옵니다.
+                                int currentTotal = regions.getJSONObject(0).getInt("current_total");
+                                
+                                // 고정값 1.0 대신 실제 인원수를 저장합니다.
+                                saveToDb(0, "PEOPLE_IN", (double)currentTotal);
+                                
+                                // 인원수만큼 반복해서 통계를 업데이트하거나 로직을 보정해야 합니다.
+                                for(int i=0; i < currentTotal; i++) {
+                                    updateVisitorStats();
+                                }
                             }
                         }
                     } catch (Exception e) {
@@ -110,23 +118,35 @@ public class MqttTest {
     private static void processSensorData(String type, double value) {
         saveToDb(0, type, value);
 
-        String selectSql = "SELECT min_value, max_value FROM sensor_threshold WHERE sensor_type = ?";
+        // 1. SQL 쿼리에 alert_interval 추가
+        String selectSql = "SELECT min_value, max_value, alert_interval FROM sensor_threshold WHERE sensor_type = ?";
+        
         try (PreparedStatement pstmt = conn.prepareStatement(selectSql)) {
             pstmt.setString(1, type);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     double min = rs.getDouble("min_value");
                     double max = rs.getDouble("max_value");
+                    
+                    // 2. DB에서 설정된 분(minute) 값을 읽어옴 (데이터가 없으면 기본값 10분)
+                    int intervalMin = rs.getInt("alert_interval");
+                    if (rs.wasNull()) intervalMin = 10; 
+
                     boolean hasMin = !rs.wasNull();
 
                     if ((hasMin && value < min) || (max > 0 && value > max)) {
                         String alertType = type.equals("TEMP") ? "TEMP_ABNORMAL" : 
                                          type.equals("HUMIDITY") ? "HUMIDITY_ABNORMAL" : "STINK_HIGH";
-                        checkAndCreateAlert(alertType, type + " 수치 이상 발생", "현재값: " + value);
+                        
+                        // 3. 분 단위를 밀리초(ms)로 변환하여 전달
+                        long dynamicIntervalMs = intervalMin * 60 * 1000L;
+                        checkAndCreateAlert(alertType, type + " 수치 이상 발생", "현재값: " + value, dynamicIntervalMs);
                     }
                 }
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            System.out.println(">>> [센서처리 에러] " + e.getMessage());
+        }
     }
 
     /**
@@ -288,14 +308,13 @@ public class MqttTest {
         } catch (Exception e) {}
     }
     
-    private static void checkAndCreateAlert(String type, String title, String msg) {
+    private static void checkAndCreateAlert(String type, String title, String msg, long dynamicInterval) {
         long currentTime = System.currentTimeMillis();
         long lastTime = lastAlertTimeMap.getOrDefault(type, 0L);
 
-        // 현재 시간과 마지막 시간을 뺏을 때 10분(ALERT_INTERVAL)보다 크면 알림 발생
-        if (currentTime - lastTime > ALERT_INTERVAL) {
+        if (currentTime - lastTime > dynamicInterval) {
             createAlert(type, title, msg);
-            lastAlertTimeMap.put(type, currentTime); // 마지막 알림 시간을 지금으로 갱신
+            lastAlertTimeMap.put(type, currentTime); 
         }
     }
 

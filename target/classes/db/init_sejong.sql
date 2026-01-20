@@ -84,3 +84,5 @@ INSERT INTO visitor_manager (manager_id, daily_count) VALUES (1, 0);
 INSERT INTO hourly_stats (hour_id) VALUES 
 (0),(1),(2),(3),(4),(5),(6),(7),(8),(9),(10),(11),
 (12),(13),(14),(15),(16),(17),(18),(19),(20),(21),(22),(23);
+
+ALTER TABLE sensor_threshold ADD COLUMN alert_interval INT DEFAULT 10;
