@@ -298,14 +298,50 @@ public class MqttTest {
     }
 
     private static void createAlert(String type, String title, String msg) {
+        // 알림 종류를 DB 설정 테이블의 이름과 맞추는 작업
+        String sensorType = "";
+        if (type.contains("TEMP")) sensorType = "TEMP";
+        else if (type.contains("HUMIDITY")) sensorType = "HUMIDITY";
+        else if (type.contains("STINK")) sensorType = "NH3";
+        else if (type.contains("PEOPLE")) sensorType = "PEOPLE_IN";
+        else if (type.contains("CONSUMABLE")) {
+            // 소모품은 제목(title)에 포함된 단어로 비누인지 타월인지 구분
+            sensorType = title.contains("LIQUID_SOAP") ? "LIQUID_SOAP" : "PAPER_TOWEL";
+        }
+
+        // DB에서 이 센서의 알림이 켜져 있는지 확인
+        if (!isAlertEnabled(sensorType)) {
+            System.out.println(">>> [알림 차단됨] " + sensorType + " 설정이 OFF 상태입니다.");
+            return; // 0(OFF)이면 여기서 함수가 종료되어 DB에 저장되지 않음
+        }
+
+        // 알림이 ON(1)일 때만 실행되는 기존 로직
         String sql = "INSERT INTO alert (alert_type, title, message) VALUES (?, ?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, type);
             pstmt.setString(2, title);
             pstmt.setString(3, msg);
             pstmt.executeUpdate();
-            System.out.println(">>> [알림생성] " + title + " (" + type + ")");
-        } catch (Exception e) {}
+            System.out.println(">>> [알림 생성] " + title + " (" + type + ")");
+        } catch (Exception e) {
+            System.out.println(">>> [알림 저장 에러] " + e.getMessage());
+        }
+    }
+    
+ // DB의 alert_setting 테이블에서 ON/OFF 상태를 읽어오는 함수
+    private static boolean isAlertEnabled(String sensorType) {
+        String sql = "SELECT is_enabled FROM alert_setting WHERE sensor_type = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, sensorType);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("is_enabled") == 1; // 1이면 true, 0이면 false
+                }
+            }
+        } catch (Exception e) {
+            System.out.println(">>> [설정 확인 에러] " + e.getMessage());
+        }
+        return false; // 에러 나거나 설정 없으면 기본적으로 끔
     }
     
     private static void checkAndCreateAlert(String type, String title, String msg, long dynamicInterval) {
