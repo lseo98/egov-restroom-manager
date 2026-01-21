@@ -38,22 +38,22 @@
 
     <ul style="list-style: none; padding: 0; margin: 0;">
         <li>
-            <a href="${pageContext.request.contextPath}/index.jsp"
+            <a href="${pageContext.request.contextPath}/dashboard.do"
                class="menu-item"
                id="menu-dashboard">대시보드</a>
         </li>
         <li>
-            <a href="${pageContext.request.contextPath}/data.jsp"
+            <a href="${pageContext.request.contextPath}/data.do"
                class="menu-item"
                id="menu-sensor-data">센서 데이터</a>
         </li>
         <li>
-            <a href="${pageContext.request.contextPath}/threshold.jsp"
+            <a href="${pageContext.request.contextPath}/threshold.do"
                class="menu-item"
                id="menu-threshold">임계치 설정</a>
         </li>
         <li>
-            <a href="${pageContext.request.contextPath}/alarm.jsp"
+            <a href="${pageContext.request.contextPath}/alarm.do"
                class="menu-item"
                id="menu-alarm">알림</a>
         </li>
@@ -64,17 +64,18 @@
 (function () {
     const path = window.location.pathname;
 
-    // active 전부 제거
+    // 모든 메뉴에서 active 클래스 제거
     document.querySelectorAll('.menu-item').forEach(a => a.classList.remove('active'));
 
-    // 현재 URL에 따라 active 지정
-    if (path.endsWith('/index.jsp') || path.endsWith('/')) {
+    // 현재 URL(path)이 어떤 .do 주소를 포함하는지에 따라 active 클래스 추가
+    // index.jsp로 접속하거나 root(/)로 접속한 경우에도 대시보드가 활성화되도록 설정
+    if (path.endsWith('/dashboard.do') || path.endsWith('/index.jsp') || path.endsWith('/')) {
         document.getElementById('menu-dashboard')?.classList.add('active');
-    } else if (path.includes('/data.jsp')) {
+    } else if (path.includes('/data.do')) {
         document.getElementById('menu-sensor-data')?.classList.add('active');
-    } else if (path.includes('/threshold.jsp')) {
+    } else if (path.includes('/threshold.do')) {
         document.getElementById('menu-threshold')?.classList.add('active');
-    } else if (path.includes('/alarm.jsp')) {
+    } else if (path.includes('/alarm.do')) {
         document.getElementById('menu-alarm')?.classList.add('active');
     }
 })();

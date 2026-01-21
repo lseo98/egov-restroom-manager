@@ -15,7 +15,7 @@ public class RestroomController {
     @Resource(name = "restroomService")
     private RestroomService restroomService;
 
-    // 1. 처음 화면에 접속할 때 전체 레이아웃을 그려주는 주소
+    // 1. 대시보드 화면 (전체 레이아웃 + 첫 데이터)
     @RequestMapping(value = "/dashboard.do")
     public String openDashboard(ModelMap model) throws Exception {
         List<StallVO> stallList = restroomService.selectStallList();
@@ -23,11 +23,30 @@ public class RestroomController {
         return "restroom/dashboard";
     }
 
-    // 2. 화면 새로고침 없이 '데이터'만 3초마다 보내주는 주소
+    // 2. 실시간 데이터 업데이트 (JSON 데이터만 반환)
     @RequestMapping(value = "/getStallStatus.do")
-    @ResponseBody // JSP 파일이 아니라 '순수 데이터'만 보낸다는 선언
+    @ResponseBody 
     public List<StallVO> getStallStatus() throws Exception {
-        // DB에서 현재 칸들의 상태 리스트만 딱 뽑아서 보냅니다.
         return restroomService.selectStallList();
+    }
+    
+    // 3. 임계치 설정 화면
+    @RequestMapping(value = "/threshold.do")
+    public String openThreshold(ModelMap model) throws Exception {
+        return "restroom/threshold"; 
+    }
+
+    // 4. 센서 데이터 이력 화면 추가
+    @RequestMapping(value = "/data.do")
+    public String openSensorData(ModelMap model) throws Exception {
+        // 나중에 센서 기록 리스트를 DB에서 가져오려면 여기에 코드를 추가하면 됩니다.
+        return "restroom/data"; 
+    }
+
+    // 5. 알림 이력 화면 추가
+    @RequestMapping(value = "/alarm.do")
+    public String openAlarm(ModelMap model) throws Exception {
+        // 나중에 발생한 알림 리스트를 DB에서 가져오려면 여기에 코드를 추가하면 됩니다.
+        return "restroom/alarm"; 
     }
 }
