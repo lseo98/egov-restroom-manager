@@ -1,45 +1,69 @@
-/* 1. 기본 레이아웃 및 배경색 강제 초기화 */
-html, body.page.threshold-page { 
-    height: 100% !important; 
+/* =========================================================
+   1. 기본 레이아웃 및 배경 초기화
+   ========================================================= */
+html,
+body.page.threshold-page {
+    height: 100% !important;
     margin: 0 !important;
-    background: #FFFFFF !important; /* index.jsp의 회색을 강제로 덮음 */
+    background: #FFFFFF !important;
     color: #0F172A;
     font-family: "Noto Sans KR", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
     overflow: hidden;
 }
 
+/* =========================================================
+   2. 레이아웃 변수
+   ========================================================= */
 :root {
-    --header-h: 0px;
     --sidebar-w: 170px;
-    --top-h: 56px;
     --gap: 12px;
     --pad-x: 16px;
     --pad-top: 12px;
     --pad-bottom: 18px;
-    --grid-bottom-space: 14px;
 }
 
-/* 2. 콘텐츠 영역 배경색 강제화 */
+/* =========================================================
+   3. 콘텐츠 영역 (Flex Column 핵심)
+   ========================================================= */
 body.page.threshold-page .content-area {
     margin-left: var(--sidebar-w);
-    height: calc(100vh - var(--header-h));
+    height: 100%;
     padding: var(--pad-top) var(--pad-x) var(--pad-bottom);
     box-sizing: border-box;
     overflow: hidden;
+
+    display: flex;
+    flex-direction: column;   /* 🔥 핵심 */
     background: #FFFFFF !important;
 }
 
-/* 3. 상단 타이틀 및 버튼 영역 */
+/* =========================================================
+   4. 상단 타이틀 영역 (자연 높이)
+   ========================================================= */
 body.page.threshold-page .page-top {
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
     gap: 12px;
     margin: 4px 0 10px;
+    flex: 0 0 auto; /* 높이 고정 X, 내용만큼 */
 }
 
-body.page.threshold-page .page-title { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-body.page.threshold-page .page-title h1 { margin: 0; font-size: 18px; letter-spacing: -0.2px; line-height: 1.2; }
+body.page.threshold-page .page-title {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+body.page.threshold-page .page-title h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: -0.2px;
+    line-height: 1.2;
+}
+
 body.page.threshold-page .page-title p {
     margin: 0;
     color: #64748B;
@@ -50,7 +74,12 @@ body.page.threshold-page .page-title p {
     text-overflow: ellipsis;
 }
 
-body.page.threshold-page .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+/* 버튼 */
+body.page.threshold-page .btn-row {
+    display: flex;
+    gap: 8px;
+}
+
 body.page.threshold-page .btn {
     border: 1px solid rgba(15,23,42,.12);
     background: #fff;
@@ -63,25 +92,35 @@ body.page.threshold-page .btn {
     box-shadow: 0 6px 16px rgba(15,23,42,.06);
     line-height: 1;
 }
-body.page.threshold-page .btn.primary { background: #0B5FFF; border-color: #0B5FFF; color: #fff; }
 
-/* 4. 그리드 영역 (카드 사이의 회색 틈새 제거 핵심) */
+body.page.threshold-page .btn.primary {
+    background: #0B5FFF;
+    border-color: #0B5FFF;
+    color: #fff;
+}
+
+/* =========================================================
+   5. GRID 영역 (🔥 해결 2의 핵심 🔥)
+   ========================================================= */
 body.page.threshold-page .grid {
-    height: calc(100% - var(--top-h) - var(--grid-bottom-space));
+    flex: 1 1 auto;      /* 🔥 남은 영역 전부 차지 */
+    min-height: 0;       /* 🔥 grid overflow 방지 */
     display: grid;
     gap: var(--gap);
     overflow: hidden;
     box-sizing: border-box;
-    background: #FFFFFF !important; /* 카드 사이 gap 영역을 흰색으로 변경 */
-    padding-bottom: 10px;
+    background: #FFFFFF !important;
 }
 
-body.page.threshold-page .grid.grid-3x2 {
+/* ▶ 상단 : 하단 = 2 : 1  (≈ 6.6 : 3.3) */
+body.page.threshold-page #grid.grid.grid-3x2 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-template-rows: 1.35fr 0.85fr;
+    grid-template-rows: 2fr 1fr;   /* ✅ 여기서 비율 조절 */
 }
 
-/* 5. 카드 컴포넌트 */
+/* =========================================================
+   6. 카드 컴포넌트
+   ========================================================= */
 body.page.threshold-page .card {
     height: 100%;
     background: #fff;
@@ -91,11 +130,14 @@ body.page.threshold-page .card {
     padding: 12px 14px 10px;
     box-sizing: border-box;
     overflow: hidden;
+
     display: flex;
     flex-direction: column;
 }
 
-body.page.threshold-page .card.compact { padding: 11px 14px 9px; }
+body.page.threshold-page .card.compact {
+    padding: 11px 14px 9px;
+}
 
 body.page.threshold-page .card-head {
     display: flex;
@@ -106,19 +148,38 @@ body.page.threshold-page .card-head {
     flex: 0 0 auto;
 }
 
-body.page.threshold-page .card-title { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+body.page.threshold-page .card-title {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
 body.page.threshold-page .card-title strong {
     font-size: 14px;
-    letter-spacing: -0.1px;
+    font-weight: 800;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-body.page.threshold-page .card-title span { font-size: 12px; color: #64748B; }
 
-/* 6. 입력 폼 레이아웃 */
-body.page.threshold-page .form { display: grid; gap: 10px; flex: 1 1 auto; }
-body.page.threshold-page .form.one { gap: 10px; }
+body.page.threshold-page .card-title span {
+    font-size: 12px;
+    color: #64748B;
+}
+
+/* =========================================================
+   7. 입력 폼
+   ========================================================= */
+body.page.threshold-page .form {
+    display: grid;
+    gap: 10px;
+    flex: 1 1 auto;
+}
+
+body.page.threshold-page .form.one {
+    gap: 10px;
+}
 
 body.page.threshold-page .row {
     display: grid;
@@ -129,14 +190,15 @@ body.page.threshold-page .row {
 
 body.page.threshold-page .label {
     font-size: 12.5px;
-    color: #334155;
     font-weight: 800;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    color: #334155;
 }
 
-body.page.threshold-page .field { display: flex; align-items: center; gap: 10px; }
+body.page.threshold-page .field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 
 body.page.threshold-page .input {
     width: 100%;
@@ -147,63 +209,69 @@ body.page.threshold-page .input {
     padding: 0 12px;
     font-size: 13px;
     outline: none;
-    box-sizing: border-box;
 }
 
-/* 7. 단위 배지 */
+/* =========================================================
+   8. 단위 배지
+   ========================================================= */
 body.page.threshold-page .unit {
-    display: flex;
-    align-items: center;
-    justify-content: center;
     height: 36px;
     min-width: 44px;
-    border: 1px solid rgba(15,23,42,.12);
     border-radius: 12px;
+    border: 1px solid rgba(15,23,42,.12);
     background: #F8FAFC;
     color: #475569;
     font-size: 12px;
     font-weight: 800;
-    line-height: 1;
-    text-align: center;
-    box-sizing: border-box;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-/* 8. 기타 요소 (힌트, 토글, 토스트) */
-body.page.threshold-page .hint {
-    margin-top: 10px;
+/* =========================================================
+   9. 토글 / 토스트
+   ========================================================= */
+body.page.threshold-page .toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+body.page.threshold-page .toggle small {
     font-size: 12px;
+    font-weight: 800;
     color: #64748B;
-    line-height: 1.25;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    flex: 0 0 auto;
 }
-
-body.page.threshold-page .toggle { display: inline-flex; align-items: center; gap: 8px; user-select: none; }
-body.page.threshold-page .toggle small { font-size: 12px; color: #64748B; font-weight: 800; }
 
 body.page.threshold-page .switch {
     position: relative;
-    width: 46px; height: 26px;
+    width: 46px;
+    height: 26px;
     background: #CBD5E1;
     border-radius: 999px;
     cursor: pointer;
-    outline: none;
 }
 
 body.page.threshold-page .switch::after {
     content: "";
     position: absolute;
-    top: 3px; left: 3px;
-    width: 20px; height: 20px;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
     background: #fff;
     border-radius: 999px;
-    box-shadow: 0 6px 14px rgba(15,23,42,.15);
     transition: transform .2s ease;
 }
-body.page.threshold-page .switch.on { background: #0B5FFF; }
-body.page.threshold-page .switch.on::after { transform: translateX(20px); }
+
+body.page.threshold-page .switch.on {
+    background: #0B5FFF;
+}
+
+body.page.threshold-page .switch.on::after {
+    transform: translateX(20px);
+}
 
 body.page.threshold-page .toast {
     position: fixed;
@@ -220,15 +288,24 @@ body.page.threshold-page .toast {
     transition: opacity .18s ease, transform .18s ease;
     z-index: 9999;
 }
-body.page.threshold-page .toast.show { opacity: 1; transform: translateY(0); }
 
-/* 9. 반응형 브레이크포인트 */
+body.page.threshold-page .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* =========================================================
+   10. 반응형
+   ========================================================= */
 @media (max-width: 1100px) {
-    body.page.threshold-page .grid.grid-3x2 {
+    body.page.threshold-page #grid.grid.grid-3x2 {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         grid-template-rows: auto;
     }
 }
+
 @media (max-width: 760px) {
-    body.page.threshold-page .grid.grid-3x2 { grid-template-columns: 1fr; }
+    body.page.threshold-page #grid.grid.grid-3x2 {
+        grid-template-columns: 1fr;
+    }
 }
