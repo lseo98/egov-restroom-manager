@@ -1,0 +1,12 @@
+# 1. 컴파일된 실행 파일들 
+target/
+*.class
+
+# 2. 이클립스 개발 환경 설정 파일 
+.classpath
+.project
+.settings/
+
+# 3. 기타 임시 파일
+.metadata/
+bin/
