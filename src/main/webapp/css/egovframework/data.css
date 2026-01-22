@@ -1,140 +1,200 @@
-/* data.css (이 페이지 전용) */
+/* data.css — Raw Data Log 전체 스타일 */
 
-/* ===== 레이아웃 (공통을 안 건드리도록 최소만) ===== */
-:root{
-  --header-h: 72px; /* header.jsp 실제 높이에 맞게 64~80 조절 */
+/* 1. 페이지 전체 래퍼 */
+.data-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 10px;
 }
 
-html, body{
-  height: 100%;
+/* 2. 상단 헤더 영역 */
+.data-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-body.app{
-  margin: 0;
-  overflow: hidden; /* 이중 스크롤 방지 */
+.data-title {
+    font-size: 28px;
+    font-weight: 900;
+    color: #1e293b;
+    margin: 0;
 }
 
-/* 헤더: 최상단 전체폭 */
-.app-header{
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  height: var(--header-h);
-  z-index: 9999;
+.btn-excel {
+    background: white;
+    color: #107c41;
+    border: 1px solid #107c41;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: 0.2s;
 }
 
-/* 헤더 아래 본문 영역 */
-.app-body{
-  display: flex;
-  height: calc(100vh - var(--header-h));
-  margin-top: var(--header-h);
-  overflow: hidden;
+.btn-excel:hover {
+    background-color: #107c41;
+    color: white;
 }
 
-/* ✅ 사이드바는 “너비/스크롤/높이”만 설정
-   색/폰트/버튼/선택상태 등은 공통 sidebar css가 책임지게 함 */
-.app-sidebar{
-  flex: 0 0 260px;
-  height: 100%;
-  overflow: auto;
-  background: transparent;
+/* 3. 필터 바 (디자인 개선: 진한 회색 적용) */
+.data-filter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #cbd5e1 !important; /* 요청하신 조금 더 진한 회색 */
+    border: 1px solid #94a3b8;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
-/* 본문 */
-.app-main{
-  flex: 1;
-  height: 100%;
-  overflow: auto;
-  padding: 22px 26px;
-  background: #ffffff;
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
-/* ===== 이 페이지 콘텐츠 스타일(전부 app-main 스코프) ===== */
-.app-main .page-header{
-  margin-bottom: 16px;
+.filter-label {
+    font-weight: 900;
+    font-size: 13px;
+    color: #334155;
+    text-transform: uppercase;
 }
 
-.app-main .page-header h2{
-  margin: 0;
-  font-size: 34px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
+/* 4. 센서 체크박스 (줄바꿈 방지) */
+.checkbox-group {
+    display: flex;
+    gap: 12px;
+    color: #1e293b !important;
+    font-weight: 700;
+    font-size: 11px;
+    white-space: nowrap;
 }
 
-/* 필터 바 */
-.app-main .filter-bar{
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border-radius: 10px;
-  background: #2c3036;
-  margin: 14px 0 18px;
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
 }
 
-.app-main .filter-bar select,
-.app-main .filter-bar input,
-.app-main .filter-bar button{
-  height: 30px;
+/* 5. 날짜 입력창 (높이 축소 및 디자인 개선) */
+.input-date {
+    border: 1px solid #94a3b8;
+    border-radius: 4px;
+    padding: 2px 8px; /* 높이 축소 핵심 */
+    font-size: 12px;
+    color: #1e293b;
+    background-color: #ffffff;
+    outline: none;
+    height: 26px; /* 높이 고정 */
 }
 
-.app-main .filter-bar input[type="text"]{
-  width: 240px;
+.date-sep {
+    color: #475569;
+    font-weight: 900;
+    margin: 0 4px;
 }
 
-/* 테이블 감싸기 */
-.app-main .table-wrap{
-  background: #2c3036;
-  border-radius: 12px;
-  overflow: hidden;
+/* 6. 조회하기 버튼 */
+.btn-search {
+    background-color: #1e293b !important;
+    color: white !important;
+    border: none;
+    padding: 0 16px;
+    height: 26px; /* 날짜창과 높이 통일 */
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
 }
 
-/* 테이블 */
-.app-main .data-table{
-  width: 100%;
-  border-collapse: collapse;
+.btn-search:hover {
+    background-color: #0f172a !important;
 }
 
-.app-main .data-table th{
-  background-color: #3d424a;
-  padding: 14px 16px;
-  text-align: left;
-  border-bottom: 1px solid #4f555f;
-  white-space: nowrap;
-  color: #0b0f14; /* 필요시 #fff로 바꾸세요 */
+/* 7. 데이터 테이블 */
+.data-card {
+    background: white;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
-.app-main .data-table td{
-  padding: 14px 16px;
-  border-bottom: 1px solid #3d424a;
-  color: #0b0f14; /* 필요시 #fff로 바꾸세요 */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
 }
 
-/* 상태 배지 */
-.app-main .status-badge{
-  display: inline-block;
-  padding: 6px 14px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 800;
+.data-table th {
+    background-color: #f8fafc;
+    padding: 12px 16px;
+    text-align: left;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 900;
+    border-bottom: 2px solid #e2e8f0;
 }
 
-.app-main .status-normal{
-  background-color: #28a745;
-  color: #fff;
+.data-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+    font-size: 13px;
+    background-color: #ffffff;
 }
 
-.app-main .status-critical{
-  background-color: #dc3545;
-  color: #fff;
+/* 8. 상태 배지 */
+.badge {
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 900;
+    color: white;
+}
+.badge-normal { background-color: #94a3b8; }
+.badge-critical { background-color: #ef4444; }
+.badge-warning { background-color: #f59e0b; }
+.badge-refill { background-color: #3b82f6; }
+
+/* 9. 페이지네이션 */
+.data-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    margin-top: 10px;
 }
 
-/* 페이지네이션 */
-.app-main .pagination{
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 18px;
-  padding-right: 10px;
-  font-size: 18px;
-  font-weight: 700;
+.page-link {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 32px;
+    height: 32px;
+    text-decoration: none;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.page-link:hover {
+    background-color: #f1f5f9;
+}
+
+.page-link.active {
+    background-color: #1e293b !important;
+    color: white !important;
+    pointer-events: none;
 }
