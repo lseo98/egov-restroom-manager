@@ -10,50 +10,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Roboto+Mono&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
-    <!-- ✅ Chart.js 제거 / ✅ Apache ECharts 추가 -->
+    <!-- ✅ 외부 CSS 연결 -->
+    <link rel="stylesheet" href="<c:url value='/css/egovframework/dashboard.css'/>">
+
+    <!-- ✅ Apache ECharts -->
     <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
-
-    <style>
-        html, body { margin: 0; padding: 0; height: 100vh; width: 100vw; overflow: hidden; font-family: 'Noto Sans KR', sans-serif; background: #f6f7fb; }
-        .wrapper { display: flex; height: calc(100vh - 64px); }
-        .main { flex: 1; padding: 20px; display: flex; flex-direction: column; overflow: hidden; }
-        .dash-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; grid-template-rows: 6fr 4fr; gap: 20px; height: 100%; }
-        .card { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 18px; display: flex; flex-direction: column; min-height: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .title { font-weight: 900; font-size: 1.2rem; margin-bottom: 12px; color: #1e293b; }
-
-        .plan-container { flex: 1; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; min-height: 0; overflow: hidden; }
-        .plan-svg { width: 100%; height: 100%; }
-        .stall { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 2; transition: all 0.3s; }
-        .stall.occupied { fill: #fef2f2; stroke: #ef4444; stroke-width: 4; }
-        .stall.vacant { fill: #f0fdf4; stroke: #22c55e; stroke-width: 4; }
-        .stall-door { fill: #94a3b8; }
-        .stall-num-text { fill: #475569; font-size: 20px !important; font-weight: 900; }
-        .status-msg-text { font-size: 26px !important; font-weight: 900; }
-        .area-label { fill: #94a3b8; font-size: 22px !important; font-weight: 700; }
-
-        .status-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-        .status-item { background: #f8fafc; padding: 20px 10px; border-radius: 10px; text-align: center; border: 1px solid #f1f5f9; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
-        .status-item .label { font-size: 12px; color: #64748b; font-weight: 700; display: block; }
-        .status-item .value { font-size: 1.3rem; font-weight: 900; }
-        .val-temp { color: #ef4444; } .val-hum { color: #0ea5e9; } .val-odor { color: #22c55e; }
-        .status-icon { font-size: 28px !important; margin-bottom: 2px; }
-
-        .stock-section { flex: 1; display: flex; flex-direction: column; justify-content: space-around; }
-        .stock-info { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 13px; font-weight: 700; color: #475569; }
-        .progress-bar { height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden; }
-        .progress-fill { height: 100%; transition: width 0.5s ease-in-out; }
-
-        .kpi-card { background: linear-gradient(135deg, #1e2a78 0%, #17215e 100%); color: white; position: relative; overflow: hidden; padding: 0 !important; }
-        .kpi-header { padding: 18px 18px 0 18px; }
-        .kpi-header .title { color: rgba(255,255,255,0.8); margin-bottom: 0; }
-        .kpi-content { flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .kpi-value { font-size: 5rem; font-weight: 900; letter-spacing: -2px; line-height: 1; }
-        .kpi-unit { font-size: 1.5rem; opacity: 0.8; font-weight: 700; margin-top: 15px; }
-        .kpi-footer { background: rgba(0,0,0,0.2); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
-        .trend-up { color: #4ade80; display: flex; align-items: center; font-weight: 700; gap: 4px; }
-        #real-time-clock { min-width: 180px !important; display: inline-block !important; text-align: center !important; font-family: 'Roboto Mono', monospace !important; background: rgba(255,255,255,0.15) !important; font-variant-numeric: tabular-nums; border-radius: 20px; padding: 4px 15px; }
-    </style>
 </head>
+
 <body>
     <jsp:include page="/WEB-INF/jsp/common/header.jsp" />
 
@@ -62,6 +25,8 @@
 
         <main class="main">
             <div class="dash-grid">
+
+                <!-- 좌상: 도면 -->
                 <div class="card">
                     <div class="title">실시간 재실 현황</div>
                     <div class="plan-container">
@@ -95,8 +60,10 @@
                     </div>
                 </div>
 
+                <!-- 우상: 운영 상태 + 재고(ECharts) -->
                 <div class="card">
                     <div class="title">화장실 운영 상태</div>
+
                     <div class="status-grid">
                         <div class="status-item">
                             <span class="material-icons status-icon" style="color: #ef4444;">thermostat</span>
@@ -117,32 +84,35 @@
 
                     <div class="stock-section">
                         <div class="stock-item">
-                            <div class="stock-info"><span>페이퍼타올 재고</span><span>75%</span></div>
-                            <div class="progress-bar"><div class="progress-fill" style="width: 75%; background: #2563eb;"></div></div>
+                            <div class="stock-info"><span>페이퍼타올 재고</span><span id="ptLabel">75%</span></div>
+                            <div id="paperTowelChart" class="mini-stock-chart"></div>
                         </div>
+
                         <div class="stock-item">
-                            <div class="stock-info"><span>휴지 재고</span><span>30%</span></div>
-                            <div class="progress-bar"><div class="progress-fill" style="width: 30%; background: #ef4444;"></div></div>
+                            <div class="stock-info"><span>액체비누 재고</span><span id="soapLabel">60%</span></div>
+                            <div id="soapChart" class="mini-stock-chart"></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- ✅ Chart.js 캔버스 → ✅ ECharts 컨테이너 div -->
+                <!-- 좌하: 이용 추이(ECharts) -->
                 <div class="card">
                     <div class="title">오늘 시간대별 이용 추이</div>
-                    <div id="chartCanvas" style="flex:1; min-height:0; width:100%; height:100%;"></div>
+                    <div id="chartCanvas" class="chart-canvas"></div>
                 </div>
 
+                <!-- 우하: KPI -->
                 <div class="card kpi-card">
                     <div class="kpi-header"><div class="title">오늘 누적 이용자</div></div>
                     <div class="kpi-content"><span class="kpi-value">482</span><span class="kpi-unit">명</span></div>
                     <div class="kpi-footer">
                         <span>전일 동시간 대비</span>
-                        <span style="color:#4ade80; font-weight:700; display:flex; align-items:center; gap:4px;">
+                        <span class="trend-up">
                             <span class="material-icons" style="font-size:18px;">trending_up</span>12.5%
                         </span>
                     </div>
                 </div>
+
             </div>
         </main>
     </div>
@@ -172,18 +142,14 @@
             setInterval(update, 1000);
         }
 
-        // ✅ ECharts 차트 (기존 Chart.js 로직을 그대로 ECharts로 구현)
         let occChart = null;
-        let resizeBound = false;
 
         function initChart() {
             const dom = document.getElementById('chartCanvas');
             if (!dom) return;
 
-            if (occChart) {
-                occChart.dispose();
-                occChart = null;
-            }
+            const old = echarts.getInstanceByDom(dom);
+            if (old) old.dispose();
 
             occChart = echarts.init(dom);
 
@@ -195,7 +161,7 @@
                 values.push(Math.floor(Math.random() * 20) + 30);
             }
 
-            const option = {
+            occChart.setOption({
                 grid: { left: 34, right: 18, top: 18, bottom: 28 },
                 tooltip: { trigger: 'axis' },
                 xAxis: {
@@ -224,33 +190,66 @@
                     areaStyle: { opacity: 0.12 },
                     emphasis: { focus: 'series' }
                 }]
-            };
-
-            occChart.setOption(option);
-
-            if (!resizeBound) {
-                window.addEventListener('resize', () => {
-                    if (occChart) occChart.resize();
-                });
-                resizeBound = true;
-            }
+            });
         }
 
-        window.onload = function() {
-            initClock();
-            initChart();
-        };
+        let paperChart = null;
+        let soapChart = null;
+
+        function initStockCharts(paperPct = 75, soapPct = 60) {
+            paperChart = initSingleStockChart('paperTowelChart', paperPct, '#2563eb');
+            soapChart  = initSingleStockChart('soapChart', soapPct, '#f59e0b');
+
+            const ptLabel = document.getElementById('ptLabel');
+            const soapLabel = document.getElementById('soapLabel');
+            if (ptLabel) ptLabel.textContent = (Number(paperPct) || 0) + '%';
+            if (soapLabel) soapLabel.textContent = (Number(soapPct) || 0) + '%';
+        }
+
+        function initSingleStockChart(domId, pct, fillColor) {
+            const dom = document.getElementById(domId);
+            if (!dom) return null;
+
+            const old = echarts.getInstanceByDom(dom);
+            if (old) old.dispose();
+
+            const chart = echarts.init(dom);
+            const safePct = Math.max(0, Math.min(100, Number(pct) || 0));
+
+            chart.setOption({
+                animation: true,
+                grid: { left: 0, right: 0, top: 0, bottom: 0, containLabel: false },
+                xAxis: { type: 'value', min: 0, max: 100, show: false },
+                yAxis: { type: 'category', data: [''], show: false },
+                series: [
+                    {
+                        type: 'bar',
+                        data: [100],
+                        barWidth: 12,
+                        barGap: '-100%',
+                        silent: true,
+                        itemStyle: { color: '#e2e8f0', borderRadius: 6 }
+                    },
+                    {
+                        type: 'bar',
+                        data: [safePct],
+                        barWidth: 12,
+                        z: 3,
+                        itemStyle: { color: fillColor, borderRadius: 6 }
+                    }
+                ]
+            });
+
+            return chart;
+        }
 
         function updateRealTime() {
-            // 1. 데이터 전용 주소에 정보를 요청합니다
             fetch('/test1/getStallStatus.do')
-                .then(response => response.json())
+                .then(r => r.json())
                 .then(data => {
-                    // 2. 가져온 데이터(data)를 바탕으로 SVG의 색상과 글자를 바꿉니다
                     data.forEach((stall, index) => {
                         const rect = document.querySelectorAll('.stall')[index];
                         const text = document.querySelectorAll('.status-msg-text')[index];
-
                         if (!rect || !text) return;
 
                         if (stall.isOccupied == 1) {
@@ -263,11 +262,32 @@
                             text.setAttribute('fill', '#22c55e');
                         }
                     });
+
+                    // ✅ 서버가 재고를 같이 주면 여기서 갱신
+                    // if (data.summary) initStockCharts(data.summary.paperTowelPct, data.summary.soapPct);
                 });
         }
 
-        // 3. 3초(3000ms)마다 이 함수를 실행하도록 설정합니다
-        setInterval(updateRealTime, 3000);
+        let resizeBound = false;
+        function bindResizeOnce() {
+            if (resizeBound) return;
+            window.addEventListener('resize', () => {
+                if (occChart) occChart.resize();
+                if (paperChart) paperChart.resize();
+                if (soapChart) soapChart.resize();
+            });
+            resizeBound = true;
+        }
+
+        window.onload = function() {
+            initClock();
+            initChart();
+            initStockCharts(75, 60);
+            bindResizeOnce();
+
+            updateRealTime();
+            setInterval(updateRealTime, 3000);
+        };
     </script>
 </body>
 </html>

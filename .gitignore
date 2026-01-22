@@ -10,3 +10,6 @@ target/
 # 3. 기타 임시 파일
 .metadata/
 bin/
+
+# 전자정부 표준프레임워크 DB 설정 파일 제외
+src/main/resources/egovframework/spring/context-datasource.xml
