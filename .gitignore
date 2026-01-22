@@ -11,4 +11,5 @@ target/
 .metadata/
 bin/
 
+# 4. DB 설정 파일 제외
 config.properties

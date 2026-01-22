@@ -1,0 +1,87 @@
+/* ===== 레이아웃 강제(헤더 상단 고정 + 사이드바 풀높이) ===== */
+:root{
+  --header-h: 72px; /* header.jsp 실제 높이에 맞춰 필요시 64~80 조절 */
+}
+
+html, body{
+  height: 100%;
+}
+
+body{
+  margin: 0;
+  overflow: hidden; /* 이중 스크롤 방지 */
+  background: #f6f7fb; /* 대시보드와 톤 맞춤(원하시면 삭제 가능) */
+}
+
+/* 헤더: 전체폭 상단 */
+.app-header{
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-h);
+  z-index: 1000;
+}
+
+/* 헤더 아래 영역 */
+.app-body{
+  display: flex;
+  height: calc(100vh - var(--header-h));
+  margin-top: var(--header-h);
+  overflow: hidden;
+}
+
+
+/* 본문: 스크롤은 여기서만 */
+.app-main{
+  flex: 1;
+  height: 100%;
+  overflow: auto;
+  padding: 18px 20px;
+  background: #ffffff;
+}
+
+/* ===== 기존 테이블/필터 스타일(필요한 것만 유지) ===== */
+.page-header{
+  margin-bottom: 14px;
+}
+
+.filter-bar{
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 10px;
+  background: #2c3036;
+  margin-bottom: 16px;
+}
+
+.table-wrap{
+  border-radius: 10px;
+  overflow: hidden;
+  background: #2c3036;
+}
+
+.data-table{
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th{
+  background-color: #3d424a;
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #4f555f;
+}
+
+.data-table td{
+  padding: 12px;
+  border-bottom: 1px solid #3d424a;
+}
+
+.pagination{
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
