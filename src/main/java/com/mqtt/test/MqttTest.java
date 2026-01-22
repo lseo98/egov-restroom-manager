@@ -67,7 +67,11 @@ public class MqttTest {
                         
                         if (json.has("occupancy")) {
                             double val = json.getDouble("occupancy");
-                            saveToDb(stallId, "OCCUPANCY", val);
+                            // 값에 따라 상태 문자열 결정
+                            String occStatus = (val == 1.0) ? "occupied" : "vacant"; 
+                            
+                            // DB 저장 시 상태값 전달
+                            saveToDb(stallId, "OCCUPANCY", val, occStatus); 
                             updateStallStatus(stallId, val == 1.0);
                         }
                         
@@ -80,7 +84,7 @@ public class MqttTest {
                             JSONArray regions = regionData.getJSONArray("region_count_data");
                             if (regions.length() > 0) {
                                 int currentTotal = regions.getJSONObject(0).getInt("current_total");
-                                saveToDb(0, "PEOPLE_IN", (double)currentTotal);
+                                saveToDb(0, "PEOPLE_IN", (double)currentTotal, null);
                                 for(int i=0; i < currentTotal; i++) {
                                     updateVisitorStats();
                                 }
@@ -157,27 +161,57 @@ public class MqttTest {
     }
 
     private static void processSensorData(String type, double value) {
-        saveToDb(0, type, value);
+        String status = "normal";
+        String alertType = "";
+        String alertTitle = "";
+
+        // 1. DB에서 설정값 읽기 (min_value, max_value, alert_interval)
         String selectSql = "SELECT min_value, max_value, alert_interval FROM sensor_threshold WHERE sensor_type = ?";
+        
         try (PreparedStatement pstmt = conn.prepareStatement(selectSql)) {
             pstmt.setString(1, type);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    double min = rs.getDouble("min_value");
-                    double max = rs.getDouble("max_value");
+                    double minVal = rs.getDouble("min_value");
+                    double maxVal = rs.getDouble("max_value");
                     int intervalMin = rs.getInt("alert_interval");
-                    if (rs.wasNull()) intervalMin = 10; 
-                    if ((!rs.wasNull() && value < min) || (max > 0 && value > max)) {
-                        String alertType = type.equals("TEMP") ? "TEMP_ABNORMAL" : 
-                                         type.equals("HUMIDITY") ? "HUMIDITY_ABNORMAL" : "STINK_HIGH";
+                    if (rs.wasNull()) intervalMin = 10;
+
+                    // 2. 등급 판별 로직
+                    if (type.equals("NH3")) {
+                        // ✅ NH3 전용: 2단계 구분
+                        if (value >= maxVal) {           // max_value(10.0) 이상이면 위험
+                            status = "critical";
+                            alertType = "STINK_CRITICAL";
+                            alertTitle = "악취 [위험] 감지";
+                        } else if (value >= minVal) {    // min_value(5.0) 이상이면 주의
+                            status = "warning";
+                            alertType = "STINK_WARNING";
+                            alertTitle = "악취 [주의] 발생";
+                        }
+                    } else {
+                        // ✅ 나머지 센서: 임계값 범위를 벗어나면 무조건 warning
+                        if ((!rs.wasNull() && value < minVal) || (maxVal > 0 && value > maxVal)) {
+                            status = "warning";
+                            alertType = type + "_ABNORMAL";
+                            alertTitle = type + " 수치 이상 발생";
+                        }
+                    }
+
+                    // 3. DB 저장 및 알림 처리
+                    saveToDb(0, type, value, status);
+
+                    if (!status.equals("normal")) {
                         long dynamicIntervalMs = intervalMin * 60 * 1000L;
-                        checkAndCreateAlert(alertType, type + " 수치 이상 발생", "현재값: " + value, dynamicIntervalMs);
+                        checkAndCreateAlert(alertType, alertTitle, "현재값: " + value, dynamicIntervalMs);
                     }
                 }
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            System.out.println(">>> [데이터 처리 에러] " + e.getMessage());
+        }
     }
-
+    
     private static void updateVisitorStats() {
         int currentHour = LocalTime.now().getHour();
         checkMidnightReset(); 
@@ -217,38 +251,63 @@ public class MqttTest {
     }
 
     private static void updateAndSaveLevel(String typeKey) {
-        int randomRefillPoint = (int)(Math.random() * 8) + 3; 
-        String updateSql = "UPDATE consumable SET current_level = CASE WHEN current_level <= ? THEN 100 ELSE current_level - 1 END WHERE type_key = ?";
         String selectSql = "SELECT current_level, threshold FROM consumable WHERE type_key = ?";
-        try (PreparedStatement pstmtUpdate = conn.prepareStatement(updateSql);
-             PreparedStatement pstmtSelect = conn.prepareStatement(selectSql)) {
-            pstmtUpdate.setInt(1, randomRefillPoint);
-            pstmtUpdate.setString(2, typeKey);
-            pstmtUpdate.executeUpdate();
-            pstmtSelect.setString(1, typeKey);
-            try (ResultSet rs = pstmtSelect.executeQuery()) {
+        String updateSql = "UPDATE consumable SET current_level = ? WHERE type_key = ?";
+        
+        try (PreparedStatement psSelect = conn.prepareStatement(selectSql);
+             PreparedStatement psUpdate = conn.prepareStatement(updateSql)) {
+            
+            psSelect.setString(1, typeKey);
+            try (ResultSet rs = psSelect.executeQuery()) {
                 if (rs.next()) {
-                    int level = rs.getInt("current_level");
+                    int current = rs.getInt("current_level");
                     int threshold = rs.getInt("threshold");
-                    saveToDb(0, typeKey, (double)level);
-                    if (level == threshold) {
-                        createAlert("CONSUMABLE_LOW", typeKey + " 잔량 부족", "현재 잔량: " + level + "%");
+                    int nextLevel;
+                    String status = "normal";
+
+                    if (current <= 0) {
+                        nextLevel = 100;
+                        status = "refilled";
+                    } else {
+                        int decrease = (int)(Math.random() * 6) + 2; 
+                        nextLevel = Math.max(0, current - decrease);
+                        
+                        if (nextLevel <= 0) {
+                            nextLevel = 0;
+                            status = "warning"; 
+                        } else if (nextLevel <= threshold) {
+                            status = "warning";
+                        }
+                    }
+
+                    psUpdate.setInt(1, nextLevel);
+                    psUpdate.setString(2, typeKey);
+                    psUpdate.executeUpdate();
+                    
+                    // DB 저장 (상태값 포함)
+                    saveToDb(0, typeKey, (double)nextLevel, status);
+
+                    if (status.equals("warning")) {
+                        createAlert("CONSUMABLE_LOW", typeKey + " 잔량 부족", "현재 잔량: " + nextLevel + "%");
                     }
                 }
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            System.out.println(">>> [소모품 에러] " + e.getMessage());
+        }
     }
 
-    private static void saveToDb(int stallId, String type, double value) {
-        String sql = "INSERT INTO sensor_reading (stall_id, sensor_type, value) VALUES (?, ?, ?)";
+    private static void saveToDb(int stallId, String type, double value, String status) {
+        String sql = "INSERT INTO sensor_reading (stall_id, sensor_type, value, status) VALUES (?, ?, ?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) { 
             if (stallId > 0) pstmt.setInt(1, stallId); 
             else pstmt.setNull(1, java.sql.Types.INTEGER); 
             pstmt.setString(2, type);
             pstmt.setDouble(3, value);
+            pstmt.setString(4, status);
             pstmt.executeUpdate();
             if (stallId > 0) System.out.println(">>> [DB저장] " + type + "(" + stallId + "번 칸): " + value);
-            else System.out.println(">>> [DB저장] " + type + ": " + value);
+            System.out.println(">>> [DB저장] " + type + ": " + value + " (상태: " + status + ")");
         } catch (Exception e) {
             System.out.println(">>> [DB저장 에러] " + e.getMessage());
         }

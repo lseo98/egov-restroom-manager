@@ -68,13 +68,13 @@ CREATE TABLE alert (
 INSERT INTO stall (stall_name) VALUES ('1번 칸'), ('2번 칸'), ('3번 칸'), ('4번 칸');
 
 INSERT INTO consumable (type_key, threshold, unit, current_level) VALUES 
-('LIQUID_SOAP', 10, '%', 100),
-('PAPER_TOWEL', 10, '%', 100);
+('LIQUID_SOAP', 10, '%', 80),
+('PAPER_TOWEL', 10, '%', 40);
 
 INSERT INTO sensor_threshold (sensor_type, min_value, max_value, unit) VALUES 
 ('TEMP', 18.00, 27.00, '℃'),
 ('HUMIDITY', 40.00, 60.00, '%'),
-('NH3', NULL, 5.00, 'ppm'),
+('NH3', 5.00, 10.00, 'ppm'),
 ('PEOPLE_IN', NULL, 10.00, '명');
 
 -- 관리자 한 줄 생성
@@ -101,3 +101,5 @@ INSERT INTO alert_setting (sensor_type) VALUES
 ('PEOPLE_IN'), 
 ('LIQUID_SOAP'), 
 ('PAPER_TOWEL');
+
+ALTER TABLE sensor_reading ADD COLUMN status VARCHAR(20) DEFAULT 'normal';
