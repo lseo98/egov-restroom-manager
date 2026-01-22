@@ -10,3 +10,5 @@ target/
 # 3. 기타 임시 파일
 .metadata/
 bin/
+
+config.properties
