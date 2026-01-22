@@ -1,29 +1,28 @@
-/* ===== 레이아웃 강제(헤더 상단 고정 + 사이드바 풀높이) ===== */
+/* data.css (이 페이지 전용) */
+
+/* ===== 레이아웃 (공통을 안 건드리도록 최소만) ===== */
 :root{
-  --header-h: 72px; /* header.jsp 실제 높이에 맞춰 필요시 64~80 조절 */
+  --header-h: 72px; /* header.jsp 실제 높이에 맞게 64~80 조절 */
 }
 
 html, body{
   height: 100%;
 }
 
-body{
+body.app{
   margin: 0;
   overflow: hidden; /* 이중 스크롤 방지 */
-  background: #f6f7fb; /* 대시보드와 톤 맞춤(원하시면 삭제 가능) */
 }
 
-/* 헤더: 전체폭 상단 */
+/* 헤더: 최상단 전체폭 */
 .app-header{
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 0; left: 0; right: 0;
   height: var(--header-h);
-  z-index: 1000;
+  z-index: 9999;
 }
 
-/* 헤더 아래 영역 */
+/* 헤더 아래 본문 영역 */
 .app-body{
   display: flex;
   height: calc(100vh - var(--header-h));
@@ -31,57 +30,111 @@ body{
   overflow: hidden;
 }
 
+/* ✅ 사이드바는 “너비/스크롤/높이”만 설정
+   색/폰트/버튼/선택상태 등은 공통 sidebar css가 책임지게 함 */
+.app-sidebar{
+  flex: 0 0 260px;
+  height: 100%;
+  overflow: auto;
+  background: transparent;
+}
 
-/* 본문: 스크롤은 여기서만 */
+/* 본문 */
 .app-main{
   flex: 1;
   height: 100%;
   overflow: auto;
-  padding: 18px 20px;
+  padding: 22px 26px;
   background: #ffffff;
 }
 
-/* ===== 기존 테이블/필터 스타일(필요한 것만 유지) ===== */
-.page-header{
-  margin-bottom: 14px;
-}
-
-.filter-bar{
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  padding: 12px;
-  border-radius: 10px;
-  background: #2c3036;
+/* ===== 이 페이지 콘텐츠 스타일(전부 app-main 스코프) ===== */
+.app-main .page-header{
   margin-bottom: 16px;
 }
 
-.table-wrap{
-  border-radius: 10px;
-  overflow: hidden;
-  background: #2c3036;
+.app-main .page-header h2{
+  margin: 0;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
 }
 
-.data-table{
+/* 필터 바 */
+.app-main .filter-bar{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #2c3036;
+  margin: 14px 0 18px;
+}
+
+.app-main .filter-bar select,
+.app-main .filter-bar input,
+.app-main .filter-bar button{
+  height: 30px;
+}
+
+.app-main .filter-bar input[type="text"]{
+  width: 240px;
+}
+
+/* 테이블 감싸기 */
+.app-main .table-wrap{
+  background: #2c3036;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* 테이블 */
+.app-main .data-table{
   width: 100%;
   border-collapse: collapse;
 }
 
-.data-table th{
+.app-main .data-table th{
   background-color: #3d424a;
-  padding: 12px;
+  padding: 14px 16px;
   text-align: left;
   border-bottom: 1px solid #4f555f;
+  white-space: nowrap;
+  color: #0b0f14; /* 필요시 #fff로 바꾸세요 */
 }
 
-.data-table td{
-  padding: 12px;
+.app-main .data-table td{
+  padding: 14px 16px;
   border-bottom: 1px solid #3d424a;
+  color: #0b0f14; /* 필요시 #fff로 바꾸세요 */
 }
 
-.pagination{
+/* 상태 배지 */
+.app-main .status-badge{
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.app-main .status-normal{
+  background-color: #28a745;
+  color: #fff;
+}
+
+.app-main .status-critical{
+  background-color: #dc3545;
+  color: #fff;
+}
+
+/* 페이지네이션 */
+.app-main .pagination{
   display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 16px;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+  padding-right: 10px;
+  font-size: 18px;
+  font-weight: 700;
 }
