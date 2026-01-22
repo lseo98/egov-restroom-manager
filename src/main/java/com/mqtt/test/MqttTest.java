@@ -1,32 +1,37 @@
 package com.mqtt.test;
 
+import java.io.FileNotFoundException; 
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.time.LocalTime;
 import java.sql.Timestamp;
+import java.time.LocalTime;
+import java.util.Properties;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class MqttTest {
-    // 1. 설정 정보
-    static String serverIp = "192.168.0.60"; 
-    static String broker = "tcp://" + serverIp + ":1883";
-    static String dbUrl = "jdbc:mariadb://localhost:3306/sejong"; 
-    static String dbUser = "root";
-    static String dbPass = "1234";
+    // 설정 정보를 담을 변수들
+    static String serverIp; 
+    static String broker;
+    static String dbUrl; 
+    static String dbUser;
+    static String dbPass;
 
     static Connection conn = null;
     static String lastProcessDate = ""; 
-    
-    // 알림 종류별로 마지막 발생 시간을 기록할 장부
     static java.util.Map<String, Long> lastAlertTimeMap = new java.util.HashMap<>();
 
     public static void main(String[] args) {
         try {
+            // 1. 설정 파일 로드
+            loadConfig();
+            
             System.out.println(">>> [시스템] 스마트 화장실 관리 모듈 가동 시작...");
             
             // 2. DB 연결
@@ -34,24 +39,19 @@ public class MqttTest {
             conn = DriverManager.getConnection(dbUrl, dbUser, dbPass);
             System.out.println(">>> [DB] MariaDB 연결 성공!");
 
-            // 시작하자마자 DB의 last_updated를 보고 리셋 여부 판단
             checkMidnightReset();
-
-            // 3. 소모품 시뮬레이션 시작
             startConsumableSimulation();
 
-            // 4. MQTT 클라이언트 설정
+            // 3. MQTT 클라이언트 설정
             MqttClient client = new MqttClient(broker, "JavaClient_" + System.currentTimeMillis(), new MemoryPersistence());
             MqttConnectOptions options = new MqttConnectOptions();
             options.setAutomaticReconnect(true); 
             options.setCleanSession(true);
 
-            // 5. 메시지 수신 시 처리 로직
             client.setCallback(new MqttCallback() {
                 @Override
                 public void messageArrived(String topic, MqttMessage message) throws Exception {
                     String payload = new String(message.getPayload(), "UTF-8");
-                    
                     System.out.println("\n===========================================");
                     System.out.println("[데이터 수신] 토픽: " + topic);
                     System.out.println("[원본 JSON] " + payload);
@@ -78,7 +78,6 @@ public class MqttTest {
                         if (json.has("region_trigger_data")) {
                             JSONObject regionData = json.getJSONObject("region_trigger_data");
                             JSONArray regions = regionData.getJSONArray("region_count_data");
-                            
                             if (regions.length() > 0) {
                                 int currentTotal = regions.getJSONObject(0).getInt("current_total");
                                 saveToDb(0, "PEOPLE_IN", (double)currentTotal);
@@ -106,20 +105,34 @@ public class MqttTest {
     }
 
     /**
-     * DB의 last_updated를 확인하여 날짜가 바뀌었으면 리셋합니다.
+     * 외부 설정 파일을 읽어오는 함수
      */
-    private static void checkMidnightReset() {
-        String todayDate = java.time.LocalDate.now().toString(); // "2026-01-21"
-        String lastUpdateInDb = "";
+    private static void loadConfig() throws IOException {
+        Properties prop = new Properties();
+        
+        // 프로젝트의 src/main/resources 폴더 내 파일을 읽어옵니다.
+        try (InputStream is = MqttTest.class.getClassLoader().getResourceAsStream("config.properties")) {
+            if (is == null) {
+                throw new FileNotFoundException("config.properties 파일을 resources 폴더에서 찾을 수 없습니다.");
+            }
+            prop.load(is);
+            serverIp = prop.getProperty("server.ip");
+            broker = "tcp://" + serverIp + ":1883";
+            dbUrl = prop.getProperty("db.url");
+            dbUser = prop.getProperty("db.user");
+            dbPass = prop.getProperty("db.pass");
+        }
+    }
 
-        // 1. DB에서 last_updated 시간 읽어오기
+    private static void checkMidnightReset() {
+        String todayDate = java.time.LocalDate.now().toString();
+        String lastUpdateInDb = "";
         String selectSql = "SELECT last_updated FROM visitor_manager WHERE manager_id = 1";
         try (PreparedStatement pstmt = conn.prepareStatement(selectSql);
              ResultSet rs = pstmt.executeQuery()) {
             if (rs.next()) {
                 Timestamp ts = rs.getTimestamp("last_updated");
                 if (ts != null) {
-                    // Timestamp에서 날짜 부분(yyyy-MM-dd)만 추출
                     lastUpdateInDb = ts.toLocalDateTime().toLocalDate().toString();
                 }
             }
@@ -127,13 +140,10 @@ public class MqttTest {
             System.out.println(">>> [날짜 확인 에러] " + e.getMessage());
         }
 
-        // 2. 오늘 날짜와 DB 날짜가 다르면 리셋
         if (!todayDate.equals(lastUpdateInDb)) {
             System.out.println(">>> [시스템] 날짜 변경 감지 (DB: " + lastUpdateInDb + " -> 오늘: " + todayDate + ")");
-            
             String shiftSql = "UPDATE hourly_stats SET yesterday_count = visit_count, visit_count = 0";
             String resetSql = "UPDATE visitor_manager SET daily_count = 0, last_updated = CURRENT_TIMESTAMP WHERE manager_id = 1";
-            
             try (PreparedStatement ps1 = conn.prepareStatement(shiftSql);
                  PreparedStatement ps2 = conn.prepareStatement(resetSql)) {
                 ps1.executeUpdate();
@@ -171,21 +181,17 @@ public class MqttTest {
     private static void updateVisitorStats() {
         int currentHour = LocalTime.now().getHour();
         checkMidnightReset(); 
-
         String updateDaily = "UPDATE visitor_manager SET daily_count = daily_count + 1 WHERE manager_id = 1";
         String updateHourly = "UPDATE hourly_stats SET visit_count = visit_count + 1 WHERE hour_id = ?";
         String selectCumulative = "SELECT SUM(visit_count) AS today_sum, SUM(yesterday_count) AS yesterday_sum FROM hourly_stats WHERE hour_id <= ?";
         String selectDaily = "SELECT daily_count FROM visitor_manager WHERE manager_id = 1";
-
         try (PreparedStatement psDaily = conn.prepareStatement(updateDaily);
              PreparedStatement psHourly = conn.prepareStatement(updateHourly);
              PreparedStatement psSum = conn.prepareStatement(selectCumulative);
              PreparedStatement psSelectD = conn.prepareStatement(selectDaily)) {
-            
             psDaily.executeUpdate(); 
             psHourly.setInt(1, currentHour);
             psHourly.executeUpdate(); 
-
             psSum.setInt(1, currentHour);
             try (ResultSet rsSum = psSum.executeQuery()) {
                 if (rsSum.next()) {
@@ -197,7 +203,6 @@ public class MqttTest {
                     System.out.println(">>> 오늘 누적: " + todayCumulative + "명 / 어제 동시간 누적: " + yesterdayCumulative + "명 " + trend);
                 }
             }
-
             try (ResultSet rsD = psSelectD.executeQuery()) {
                 if (rsD.next()) {
                     int count = rsD.getInt("daily_count");
