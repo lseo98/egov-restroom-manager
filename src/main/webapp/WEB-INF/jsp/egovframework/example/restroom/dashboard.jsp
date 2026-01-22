@@ -37,7 +37,7 @@
                             <circle cx="85" cy="220" r="18" fill="#e2e8f0" /> <text x="115" y="228" class="area-label">세면대 2</text>
                             <text x="60" y="345" fill="#cbd5e1" font-size="22" font-weight="900">ENTRANCE</text>
 
-                            <c:forEach var="stall" items="${stallList}" varStatus="status">
+                            <c:forEach var="stall" items="${data.stalls}" varStatus="status">
                                 <g>
                                     <rect class="stall ${stall.isOccupied == 1 ? 'occupied' : 'vacant'}"
                                           x="${(status.index % 2 == 0) ? 285 : 530}"
@@ -68,17 +68,17 @@
                         <div class="status-item">
                             <span class="material-icons status-icon" style="color: #ef4444;">thermostat</span>
                             <span class="label">온도</span>
-                            <div class="value val-temp">24.5°C</div>
+                            <div class="value val-temp">${data.temp.value}°C</div>
                         </div>
                         <div class="status-item">
                             <span class="material-icons status-icon" style="color: #0ea5e9;">water_drop</span>
                             <span class="label">습도</span>
-                            <div class="value val-hum">42%</div>
+                            <div class="value val-hum">${data.humi.value}%</div>
                         </div>
                         <div class="status-item">
                             <span class="material-icons status-icon" style="color: #22c55e;">air</span>
                             <span class="label">악취(NH3)</span>
-                            <div class="value val-odor">0.12ppm</div>
+                            <div class="value val-odor">${data.nh3.value}ppm</div>
                         </div>
                     </div>
 
@@ -103,22 +103,26 @@
 
                 <!-- 우하: KPI -->
                 <div class="card kpi-card">
-                    <div class="kpi-header"><div class="title">오늘 누적 이용자</div></div>
-                    <div class="kpi-content"><span class="kpi-value">482</span><span class="kpi-unit">명</span></div>
-                    <div class="kpi-footer">
-                        <span>전일 동시간 대비</span>
-                        <span class="trend-up">
-                            <span class="material-icons" style="font-size:18px;">trending_up</span>12.5%
-                        </span>
-                    </div>
-                </div>
-
+				    <div class="kpi-header"><div class="title">오늘 누적 이용자</div></div>
+				    <div class="kpi-content">
+				        <span class="kpi-value">${data.todaySum}</span><span class="kpi-unit">명</span>
+				    </div>
+				    <div class="kpi-footer">
+				        <span>전일 동시간 대비</span>
+				        <span id="trendBox" class="trend-up">
+				            <span id="trendIcon" class="material-icons" style="font-size:18px;"></span>
+				            <span id="percentVal">${data.diffPercent} %</span>
+				        </span>
+				    </div>
+				</div>
             </div>
         </main>
     </div>
 
     <script>
         let lastTimeStr = "";
+        let lastPaperPct = -1; 
+        let lastSoapPct = -1; 
 
         function initClock() {
             const el = document.getElementById('real-time-clock');
@@ -144,22 +148,14 @@
 
         let occChart = null;
 
-        function initChart() {
+        function initChart(labels = [], values = []) {
             const dom = document.getElementById('chartCanvas');
             if (!dom) return;
 
             const old = echarts.getInstanceByDom(dom);
             if (old) old.dispose();
-
+            
             occChart = echarts.init(dom);
-
-            const h = new Date().getHours();
-            const labels = [];
-            const values = [];
-            for (let i = 9; i <= h; i++) {
-                labels.push(i + '시');
-                values.push(Math.floor(Math.random() * 20) + 30);
-            }
 
             occChart.setOption({
                 grid: { left: 34, right: 18, top: 18, bottom: 28 },
@@ -168,14 +164,11 @@
                     type: 'category',
                     data: labels,
                     boundaryGap: false,
-                    axisTick: { show: false },
                     axisLine: { lineStyle: { color: '#e2e8f0' } },
                     axisLabel: { color: '#64748b', fontWeight: 700 }
                 },
                 yAxis: {
                     type: 'value',
-                    axisLine: { show: false },
-                    axisTick: { show: false },
                     axisLabel: { color: '#64748b', fontWeight: 700 },
                     splitLine: { lineStyle: { color: '#f1f5f9' } }
                 },
@@ -184,11 +177,7 @@
                     type: 'line',
                     data: values,
                     smooth: true,
-                    symbol: 'circle',
-                    symbolSize: 7,
-                    lineStyle: { width: 3 },
-                    areaStyle: { opacity: 0.12 },
-                    emphasis: { focus: 'series' }
+                    areaStyle: { opacity: 0.12 }
                 }]
             });
         }
@@ -244,30 +233,98 @@
         }
 
         function updateRealTime() {
-            fetch('/test1/getStallStatus.do')
+            // 1. URL 뒤에 타임스탬프를 붙여 브라우저의 강제 데이터 갱신을 유도합니다.
+            const url = '${pageContext.request.contextPath}/getDashboardData.do?t=' + new Date().getTime();
+
+            fetch(url)
                 .then(r => r.json())
                 .then(data => {
-                    data.forEach((stall, index) => {
-                        const rect = document.querySelectorAll('.stall')[index];
-                        const text = document.querySelectorAll('.status-msg-text')[index];
-                        if (!rect || !text) return;
 
-                        if (stall.isOccupied == 1) {
-                            rect.setAttribute('class', 'stall occupied');
-                            text.textContent = '사용중';
-                            text.setAttribute('fill', '#ef4444');
+                    // 2. 화장실 칸 재실 현황 업데이트 (SVGs)
+                    if (data.stalls) {
+                        data.stalls.forEach((stall, index) => {
+                            const rect = document.querySelectorAll('.stall')[index];
+                            const text = document.querySelectorAll('.status-msg-text')[index];
+                            if (!rect || !text) return;
+
+                            if (stall.isOccupied == 1) {
+                                rect.setAttribute('class', 'stall occupied');
+                                text.textContent = '사용중';
+                                text.setAttribute('fill', '#ef4444');
+                            } else {
+                                rect.setAttribute('class', 'stall vacant');
+                                text.textContent = '비어있음';
+                                text.setAttribute('fill', '#22c55e');
+                            }
+                        });
+                    }
+
+                    // 3. 환경 센서 업데이트 (온도, 습도, 악취)
+                    if (data.temp) document.querySelector('.val-temp').textContent = data.temp.value + "°C";
+                    if (data.humi) document.querySelector('.val-hum').textContent = data.humi.value + "%";
+                    if (data.nh3)  document.querySelector('.val-odor').textContent = data.nh3.value + "ppm";
+
+                    // 4. 누적 이용자 및 증감률 업데이트
+                    if (data.todaySum !== undefined) {
+                        document.querySelector('.kpi-value').textContent = data.todaySum;
+                    }
+
+                    if (data.diffPercent !== undefined) {
+                        const trendBox = document.getElementById('trendBox');
+                        const trendIcon = document.getElementById('trendIcon');
+                        const percentVal = document.getElementById('percentVal');
+
+                        if (data.diffPercent === "-") {
+                            percentVal.textContent = "- %";
+                            trendBox.style.color = "#64748b";
+                            trendIcon.textContent = "trending_flat";
                         } else {
-                            rect.setAttribute('class', 'stall vacant');
-                            text.textContent = '비어있음';
-                            text.setAttribute('fill', '#22c55e');
+                            const diff = parseFloat(data.diffPercent);
+                            percentVal.textContent = Math.abs(diff).toFixed(1) + " %";
+                            
+                            // 수치에 따른 색상 및 아이콘 변경
+                            if (diff > 0) {
+                                trendBox.style.color = "#ef4444"; 
+                                trendIcon.textContent = "trending_up";
+                            } else if (diff < 0) {
+                                trendBox.style.color = "#3b82f6"; 
+                                trendIcon.textContent = "trending_down";
+                            } else {
+                                trendBox.style.color = "#64748b"; 
+                                trendIcon.textContent = "trending_flat";
+                            }
                         }
-                    });
+                    }
 
-                    // ✅ 서버가 재고를 같이 주면 여기서 갱신
-                    // if (data.summary) initStockCharts(data.summary.paperTowelPct, data.summary.soapPct);
-                });
+                    // 5. 시간별 이용 추이 차트 업데이트 (ECharts)
+                    if (data.hourlyStats && occChart) {
+                        const labels = data.hourlyStats.map(s => s.hourId + "시");
+                        const values = data.hourlyStats.map(s => s.visitCount);
+                        occChart.setOption({
+                            xAxis: { data: labels },
+                            series: [{ data: values }]
+                        });
+                    }
+
+                    // 6. 소모품 재고 업데이트 (Stock Charts)
+                    if (data.stocks) {
+                        let paperPct = 0;
+                        let soapPct = 0;
+                        data.stocks.forEach(stock => {
+                            if (stock.typeKey === 'PAPER_TOWEL') paperPct = stock.currentLevel;
+                            if (stock.typeKey === 'LIQUID_SOAP') soapPct = stock.currentLevel;
+                        });
+                        if (paperPct !== lastPaperPct || soapPct !== lastSoapPct) {                            
+                            initStockCharts(paperPct, soapPct);
+                            
+                            lastPaperPct = paperPct;
+                            lastSoapPct = soapPct;
+                        }
+                    }
+                })
+                .catch(err => console.error("데이터 동기화 실패:", err));
         }
-
+        
         let resizeBound = false;
         function bindResizeOnce() {
             if (resizeBound) return;
@@ -281,13 +338,31 @@
 
         window.onload = function() {
             initClock();
-            initChart();
-            initStockCharts(75, 60);
-            bindResizeOnce();
+            
+            const hLabels = [];
+            const hValues = [];
+            <c:forEach var="stat" items="${data.hourlyStats}">
+                hLabels.push("${stat.hourId}시");
+                hValues.push(${stat.visitCount});
+            </c:forEach>
+            initChart(hLabels, hValues);
+            
+            let paperVal = 0; 
+            let soapVal = 0;
 
+            <c:forEach var="s" items="${data.stocks}">
+                if("${s.typeKey}" === "PAPER_TOWEL") paperVal = ${s.currentLevel};
+                if("${s.typeKey}" === "LIQUID_SOAP") soapVal = ${s.currentLevel};
+            </c:forEach>
+            initStockCharts(paperVal, soapVal);
+            
+            lastPaperPct = paperVal; 
+            lastSoapPct = soapVal;  
+
+            bindResizeOnce();
             updateRealTime();
-            setInterval(updateRealTime, 3000);
+            setInterval(updateRealTime, 3000); 
         };
-    </script>
-</body>
+        </script>
+	</body>
 </html>

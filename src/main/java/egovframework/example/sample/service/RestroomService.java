@@ -1,8 +1,7 @@
 package egovframework.example.sample.service;
-
-import java.util.List;
+import java.util.Map;
 
 public interface RestroomService {
-    /** 재실 리스트 가져오기 기능 */
-    List<StallVO> selectStallList() throws Exception;
+    // 대시보드에 필요한 모든 데이터를 묶어서 가져오는 기능
+    Map<String, Object> getDashboardData() throws Exception;
 }
