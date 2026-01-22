@@ -1,15 +1,59 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-
 <mapper namespace="egovframework.example.sample.service.impl.RestroomMapper">
 
-    <select id="selectStallList" resultType="egovframework.example.sample.service.StallVO">
-        SELECT
-            stall_id AS stallId,
-            stall_name AS stallName,
-            is_occupied AS isOccupied
-        FROM stall
-        ORDER BY stall_id ASC
+	<select id="selectStallList" resultType="egovframework.example.sample.service.StallVO">
+	    SELECT 
+	        stall_id AS stallId, 
+	        stall_name AS stallName, 
+	        is_occupied AS isOccupied 
+	    FROM stall
+	</select>
+
+    <select id="selectLatestSensor" parameterType="String" resultType="egovframework.example.sample.service.SensorVO">
+        SELECT value, measured_at as readingTime 
+        FROM sensor_reading 
+        WHERE sensor_type = #{sensorType} 
+        ORDER BY measured_at DESC 
+        LIMIT 1
     </select>
 
+    <select id="selectStockList" resultType="egovframework.example.sample.service.StockVO">
+        SELECT 
+            type_key AS typeKey, 
+            current_level AS currentLevel, 
+            threshold 
+        FROM consumable
+    </select>
+
+    <select id="selectTodayVisitor" resultType="int">
+        SELECT daily_count AS todayVisitor
+        FROM visitor_manager 
+        WHERE manager_id = 1
+    </select>
+    
+    <select id="selectHourlyStats" resultType="egovframework.example.sample.service.VisitorVO">
+        SELECT 
+            hour_id AS hourId, 
+            visit_count AS visitCount, 
+            yesterday_count AS yesterdayCount
+        FROM hourly_stats
+        WHERE hour_id BETWEEN 9 AND HOUR(NOW())
+        ORDER BY hour_id
+    </select>
+
+    <select id="selectAlertSettings" resultType="egovframework.example.sample.service.AlertSettingVO">
+        SELECT 
+            sensor_type AS sensorType, 
+            is_enabled AS isEnabled 
+        FROM alert_setting
+    </select>
+	
+	<select id="selectVisitComparison" resultType="egovframework.example.sample.service.VisitorVO">
+	    SELECT 
+	        SUM(visit_count) AS todayCount, 
+	        SUM(yesterday_count) AS yesterdayCount
+	    FROM hourly_stats
+	    WHERE hour_id &lt;= HOUR(NOW())
+	</select>
 </mapper>
