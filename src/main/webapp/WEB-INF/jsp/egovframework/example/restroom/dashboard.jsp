@@ -10,10 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Roboto+Mono&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
-    <!-- ✅ 외부 CSS 연결 -->
     <link rel="stylesheet" href="<c:url value='/css/egovframework/dashboard.css'/>">
 
-    <!-- ✅ Apache ECharts -->
     <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
 </head>
 
@@ -26,7 +24,6 @@
         <main class="main">
             <div class="dash-grid">
 
-                <!-- 좌상: 도면 -->
                 <div class="card">
                     <div class="title">실시간 재실 현황</div>
                     <div class="plan-container">
@@ -60,7 +57,6 @@
                     </div>
                 </div>
 
-                <!-- 우상: 운영 상태 + 재고(ECharts) -->
                 <div class="card">
                     <div class="title">화장실 운영 상태</div>
 
@@ -76,7 +72,7 @@
                             <div class="value val-hum">${data.humi.value}%</div>
                         </div>
                         <div class="status-item">
-                            <span class="material-icons status-icon" style="color: #22c55e;">air</span>
+                            <span class="material-icons status-icon" style="color: #6bcb77;">science</span>
                             <span class="label">악취(NH3)</span>
                             <div class="value val-odor">${data.nh3.value}ppm</div>
                         </div>
@@ -95,26 +91,24 @@
                     </div>
                 </div>
 
-                <!-- 좌하: 이용 추이(ECharts) -->
                 <div class="card">
                     <div class="title">오늘 시간대별 이용 추이</div>
                     <div id="chartCanvas" class="chart-canvas"></div>
                 </div>
 
-                <!-- 우하: KPI -->
                 <div class="card kpi-card">
-				    <div class="kpi-header"><div class="title">오늘 누적 이용자</div></div>
-				    <div class="kpi-content">
-				        <span class="kpi-value">${data.todaySum}</span><span class="kpi-unit">명</span>
-				    </div>
-				    <div class="kpi-footer">
-				        <span>전일 동시간 대비</span>
-				        <span id="trendBox" class="trend-up">
-				            <span id="trendIcon" class="material-icons" style="font-size:18px;"></span>
-				            <span id="percentVal">${data.diffPercent} %</span>
-				        </span>
-				    </div>
-				</div>
+                    <div class="kpi-header"><div class="title">오늘 누적 이용자</div></div>
+                    <div class="kpi-content">
+                        <span class="kpi-value">${data.todaySum}</span><span class="kpi-unit">명</span>
+                    </div>
+                    <div class="kpi-footer">
+                        <span>전일 동시간 대비</span>
+                        <span id="trendBox" class="trend-up">
+                            <span id="trendIcon" class="material-icons" style="font-size:18px;"></span>
+                            <span id="percentVal">${data.diffPercent} %</span>
+                        </span>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -233,14 +227,13 @@
         }
 
         function updateRealTime() {
-            // 1. URL 뒤에 타임스탬프를 붙여 브라우저의 강제 데이터 갱신을 유도합니다.
             const url = '${pageContext.request.contextPath}/getDashboardData.do?t=' + new Date().getTime();
 
             fetch(url)
                 .then(r => r.json())
                 .then(data => {
 
-                    // 2. 화장실 칸 재실 현황 업데이트 (SVGs)
+                    // 2. 화장실 칸 재실 현황 업데이트
                     if (data.stalls) {
                         data.stalls.forEach((stall, index) => {
                             const rect = document.querySelectorAll('.stall')[index];
@@ -259,12 +252,12 @@
                         });
                     }
 
-                    // 3. 환경 센서 업데이트 (온도, 습도, 악취)
+                    // 3. 환경 센서 업데이트
                     if (data.temp) document.querySelector('.val-temp').textContent = data.temp.value + "°C";
                     if (data.humi) document.querySelector('.val-hum').textContent = data.humi.value + "%";
                     if (data.nh3)  document.querySelector('.val-odor').textContent = data.nh3.value + "ppm";
 
-                    // 4. 누적 이용자 및 증감률 업데이트
+                    // 4. 누적 이용자 및 증감률 업데이트 (색상 수정 로직)
                     if (data.todaySum !== undefined) {
                         document.querySelector('.kpi-value').textContent = data.todaySum;
                     }
@@ -282,12 +275,11 @@
                             const diff = parseFloat(data.diffPercent);
                             percentVal.textContent = Math.abs(diff).toFixed(1) + " %";
                             
-                            // 수치에 따른 색상 및 아이콘 변경
                             if (diff > 0) {
-                                trendBox.style.color = "#ef4444"; 
+                                trendBox.style.color = "#4ade80"; // 증가 시 연두색
                                 trendIcon.textContent = "trending_up";
                             } else if (diff < 0) {
-                                trendBox.style.color = "#3b82f6"; 
+                                trendBox.style.color = "#ef4444"; // 감소 시 빨간색
                                 trendIcon.textContent = "trending_down";
                             } else {
                                 trendBox.style.color = "#64748b"; 
@@ -296,7 +288,7 @@
                         }
                     }
 
-                    // 5. 시간별 이용 추이 차트 업데이트 (ECharts)
+                    // 5. 시간별 이용 추이 차트 업데이트
                     if (data.hourlyStats && occChart) {
                         const labels = data.hourlyStats.map(s => s.hourId + "시");
                         const values = data.hourlyStats.map(s => s.visitCount);
@@ -306,7 +298,7 @@
                         });
                     }
 
-                    // 6. 소모품 재고 업데이트 (Stock Charts)
+                    // 6. 소모품 재고 업데이트
                     if (data.stocks) {
                         let paperPct = 0;
                         let soapPct = 0;
@@ -314,9 +306,8 @@
                             if (stock.typeKey === 'PAPER_TOWEL') paperPct = stock.currentLevel;
                             if (stock.typeKey === 'LIQUID_SOAP') soapPct = stock.currentLevel;
                         });
-                        if (paperPct !== lastPaperPct || soapPct !== lastSoapPct) {                            
+                        if (paperPct !== lastPaperPct || soapPct !== lastSoapPct) {                         
                             initStockCharts(paperPct, soapPct);
-                            
                             lastPaperPct = paperPct;
                             lastSoapPct = soapPct;
                         }
@@ -364,5 +355,5 @@
             setInterval(updateRealTime, 3000); 
         };
         </script>
-	</body>
+    </body>
 </html>
