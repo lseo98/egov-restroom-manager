@@ -1,14 +1,19 @@
 package egovframework.example.sample.web;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import javax.annotation.Resource;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.ResponseBody; 
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
 import egovframework.example.sample.service.RestroomService;
+import egovframework.example.sample.service.SensorVO;
 
 @Controller
 public class RestroomController {
@@ -61,16 +66,29 @@ public class RestroomController {
     }
 
     @RequestMapping(value = "/threshold/saveSettings.do")
-        @ResponseBody
-        public Map<String, String> saveThresholdSettings(@RequestBody Map<String, Object> data) {
-            Map<String, String> result = new HashMap<>();
-            try {
-                restroomService.updateThresholdSettings(data);
-                result.put("status", "success");
-            } catch (Exception e) {
-                e.printStackTrace();
-                result.put("status", "fail");
-            }
-            return result;
+    @ResponseBody
+    public Map<String, String> saveThresholdSettings(@RequestBody Map<String, Object> data) {
+        Map<String, String> result = new HashMap<>();
+        try {
+            restroomService.updateThresholdSettings(data);
+            result.put("status", "success");
+        } catch (Exception e) {
+            e.printStackTrace();
+            result.put("status", "fail");
         }
+        return result;
+    }
+    @RequestMapping(value = "/getSensorLogs.do")
+    @ResponseBody
+    public Map<String, Object> getSensorLogs() throws Exception {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            List<SensorVO> logs = restroomService.getSensorLogs();
+            result.put("status", "success");
+            result.put("logs", logs);
+        } catch (Exception e) {
+            result.put("status", "fail");
+        }
+        return result;
+    }
 }

@@ -125,4 +125,8 @@ public class RestroomServiceImpl implements RestroomService {
             mapper.updateConsumableThreshold(vo);
         }
     }
+    @Override
+    public List<SensorVO> getSensorLogs() throws Exception {
+        return mapper.selectSensorLogList();
+    }
 }

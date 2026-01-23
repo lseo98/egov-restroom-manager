@@ -163,7 +163,9 @@
 .badge-normal { background-color: #94a3b8; }
 .badge-critical { background-color: #ef4444; }
 .badge-warning { background-color: #f59e0b; }
-.badge-refill { background-color: #3b82f6; }
+.badge-refilled { background-color: #3b82f6; }
+.badge-occupied { background-color: #ef4444; }
+.badge-vacant   { background-color: #10b981; } 
 
 /* 9. 페이지네이션 */
 .data-pagination {
