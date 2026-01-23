@@ -32,30 +32,7 @@ html, body {
 
 .title { font-weight: 900; font-size: 1.2rem; margin-bottom: 12px; color: #1e293b; }
 
-/* ===== 도면(SVG) ===== */
-.plan-container {
-    flex: 1;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 0;
-    overflow: hidden;
-}
-
-.plan-svg { width: 100%; height: 100%; }
-
-.stall { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 2; transition: all 0.3s; }
-.stall.occupied { fill: #fef2f2; stroke: #ef4444; stroke-width: 4; }
-.stall.vacant { fill: #f0fdf4; stroke: #22c55e; stroke-width: 4; }
-
-.stall-num-text { fill: #475569; font-size: 20px !important; font-weight: 900; }
-.status-msg-text { font-size: 26px !important; font-weight: 900; }
-.area-label { fill: #94a3b8; font-size: 22px !important; font-weight: 700; }
-
-/* ===== 상태 카드 ===== */
+/* ===== 상태 카드 강조 스타일 ===== */
 .status-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
 
 .status-item {
@@ -63,45 +40,65 @@ html, body {
     padding: 20px 10px;
     border-radius: 10px;
     text-align: center;
-    border: 1px solid #f1f5f9;
+    border: 2px solid #f1f5f9;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 8px;
+    transition: all 0.3s ease;
 }
 
-.status-item .label { font-size: 12px; color: #64748b; font-weight: 700; display: block; }
-.status-item .value { font-size: 1.3rem; font-weight: 900; }
+.status-item.status-warning {
+    background: #fff1f2 !important; 
+    border-color: #fecaca !important;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.1);
+}
+.status-item.status-warning .value { color: #e11d48 !important; }
 
+@keyframes pulse-red {
+    0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+}
+
+.status-item.status-critical {
+    background: #ffe4e6 !important; 
+    border-color: #dc2626 !important;
+    border-width: 3px;
+    animation: pulse-red 2s infinite;
+}
+.status-item.status-critical .value { 
+    color: #991b1b !important; 
+    font-size: 1.5rem !important;
+}
+.status-item.status-critical .status-icon { color: #dc2626 !important; }
+
+.status-item .label { font-size: 12px; color: #64748b; font-weight: 700; display: block; }
+.status-item .value { font-size: 1.3rem; font-weight: 900; transition: all 0.3s; }
 .val-temp { color: #ef4444; }
 .val-hum { color: #0ea5e9; }
 .val-odor { color: #22c55e; }
-
 .status-icon { font-size: 28px !important; margin-bottom: 2px; }
 
-/* ===== 재고 영역 ===== */
+/* ===== 재고 및 KPI 스타일 ===== */
 .stock-section { flex: 1; display: flex; flex-direction: column; justify-content: space-around; gap: 14px; }
 .stock-item { display: flex; flex-direction: column; }
-.stock-info { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; font-weight: 700; color: #475569; }
+.stock-info { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; font-weight: 700; color: #475569; align-items: center; }
+.stock-badge { display: inline-flex; align-items: center; justify-content: center; height: 20px; padding: 0 10px; border-radius: 10px; font-size: 11px; font-weight: 900; line-height: 1; border: 1px solid transparent; white-space: nowrap; }
 
-/* ✅ ECharts 재고바 컨테이너(높이 고정해서 레이아웃 안깨짐) */
-.mini-stock-chart{
-    height: 12px;
-    width: 100%;
-    border-radius: 6px;
-    overflow: hidden;
+.stock-badge.status-sufficient { background: #ecfdf5; border-color: #bbf7d0; color: #16a34a; }
+
+/* ✅ 수정: 부족 배지에서 애니메이션 제거 */
+.stock-badge.status-insufficient { 
+    background: #fef2f2; 
+    border-color: #fecaca; 
+    color: #dc2626; 
+    border-width: 2px; 
 }
 
-/* ===== 차트 캔버스 ===== */
-.chart-canvas{
-    flex: 1;
-    min-height: 0;
-    width: 100%;
-    height: 100%;
-}
-
-/* ===== KPI 카드 ===== */
+.mini-stock-chart { height: 12px; width: 100%; border-radius: 6px; overflow: hidden; }
+.chart-canvas { flex: 1; min-height: 0; width: 100%; height: 100%; }
 .kpi-card { background: linear-gradient(135deg, #1e2a78 0%, #17215e 100%); color: white; position: relative; overflow: hidden; padding: 0 !important; }
 .kpi-header { padding: 18px 18px 0 18px; }
 .kpi-header .title { color: rgba(255,255,255,0.8); margin-bottom: 0; }
@@ -109,15 +106,13 @@ html, body {
 .kpi-value { font-size: 5rem; font-weight: 900; letter-spacing: -2px; line-height: 1; }
 .kpi-unit { font-size: 1.5rem; opacity: 0.8; font-weight: 700; margin-top: 15px; }
 .kpi-footer { background: rgba(0,0,0,0.2); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
-.trend-up { color: #4ade80; display: flex; align-items: center; font-weight: 700; gap: 4px; }
+#real-time-clock { min-width: 180px !important; display: inline-block !important; text-align: center !important; font-family: 'Roboto Mono', monospace !important; background: rgba(255,255,255,0.15) !important; border-radius: 20px; padding: 4px 15px; }
 
-#real-time-clock {
-    min-width: 180px !important;
-    display: inline-block !important;
-    text-align: center !important;
-    font-family: 'Roboto Mono', monospace !important;
-    background: rgba(255,255,255,0.15) !important;
-    font-variant-numeric: tabular-nums;
-    border-radius: 20px;
-    padding: 4px 15px;
-}
+.plan-container { flex: 1; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; min-height: 0; overflow: hidden; }
+.plan-svg { width: 100%; height: 100%; }
+.stall { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 2; transition: all 0.3s; }
+.stall.occupied { fill: #fef2f2; stroke: #ef4444; stroke-width: 4; }
+.stall.vacant { fill: #f0fdf4; stroke: #22c55e; stroke-width: 4; }
+.stall-num-text { fill: #475569; font-size: 20px !important; font-weight: 900; }
+.status-msg-text { font-size: 26px !important; font-weight: 900; }
+.area-label { fill: #94a3b8; font-size: 22px !important; font-weight: 700; }
