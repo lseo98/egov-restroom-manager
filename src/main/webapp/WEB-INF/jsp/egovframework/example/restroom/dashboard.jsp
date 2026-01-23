@@ -99,7 +99,10 @@
 
                 <div class="card kpi-card">
                     <div class="kpi-header"><div class="title">오늘 누적 이용자</div></div>
-                    <div class="kpi-content"><span class="kpi-value">${data.todaySum}</span><span class="kpi-unit">명</span></div>
+                    <div class="kpi-content">
+                        <span class="kpi-value">${data.todaySum}</span>
+                        <span class="kpi-unit">명</span>
+                    </div>
                     <div class="kpi-footer">
                         <span>전일 동시간 대비</span>
                         <span id="trendBox">
@@ -163,11 +166,13 @@
             return chart;
         }
 
-        function updateStockBadge(id, pct) {
+        // ✅ '부족' 애니메이션 제거 및 DB threshold와 직접 비교
+        function updateStockBadge(id, current, threshold) {
             var el = document.getElementById(id);
             if (!el) return;
-            var safePct = Number(pct) || 0;
-            var isLow = safePct <= 30;
+            var curVal = Number(current) || 0;
+            var thrVal = Number(threshold) || 0;
+            var isLow = curVal <= thrVal;
             el.className = 'stock-badge ' + (isLow ? 'status-insufficient' : 'status-sufficient');
             el.textContent = isLow ? '부족' : '충분';
         }
@@ -182,19 +187,16 @@
             return m;
         }
 
-        // ✅ 요구사항 로직 구현: 센서별 상태 클래스 반환
         function getStatusClass(sensorObj, sensorType) {
             if (!sensorObj || !thresholdMap || !thresholdMap[sensorType]) return '';
             var v = Number(sensorObj.value);
             if (isNaN(v)) return '';
             var th = thresholdMap[sensorType];
-
             if (sensorType === 'NH3') {
-                if (!isNaN(th.max) && v > th.max) return 'status-alert';   // Critical (빨강)
-                if (!isNaN(th.min) && v > th.min) return 'status-warning'; // Warning (노랑)
+                if (!isNaN(th.max) && v > th.max) return 'status-critical';
+                if (!isNaN(th.min) && v > th.min) return 'status-warning';
             } else {
-                // TEMP, HUMIDITY: 범위를 벗어나면 무조건 빨강
-                if ((!isNaN(th.min) && v < th.min) || (!isNaN(th.max) && v > th.max)) return 'status-alert';
+                if ((!isNaN(th.min) && v < th.min) || (!isNaN(th.max) && v > th.max)) return 'status-warning';
             }
             return '';
         }
@@ -202,7 +204,7 @@
         function setAlertBox(boxId, statusClass) {
             var el = document.getElementById(boxId);
             if (!el) return;
-            el.classList.remove('status-alert', 'status-warning');
+            el.classList.remove('status-alert', 'status-warning', 'status-critical');
             if (statusClass) el.classList.add(statusClass);
         }
 
@@ -228,41 +230,42 @@
                     if (data.humi) document.querySelector('.val-hum').textContent = data.humi.value + "%";
                     if (data.nh3)  document.querySelector('.val-odor').textContent = data.nh3.value + "ppm";
 
-                    // ✅ 색상 업데이트 적용
                     setAlertBox('tempBox', getStatusClass(data.temp, 'TEMP'));
                     setAlertBox('humBox',  getStatusClass(data.humi, 'HUMIDITY'));
                     setAlertBox('odorBox', getStatusClass(data.nh3,  'NH3'));
 
-                    if (data.todaySum !== undefined) document.querySelector('.kpi-value').textContent = data.todaySum;
-
-                    if (data.diffPercent !== undefined) {
-                        var trendBox = document.getElementById('trendBox'), trendIcon = document.getElementById('trendIcon'), percentVal = document.getElementById('percentVal');
-                        if (data.diffPercent === "-") {
-                            percentVal.textContent = "- %"; trendBox.style.color = "#64748b"; trendIcon.textContent = "trending_flat";
-                        } else {
-                            var diff = parseFloat(data.diffPercent);
-                            percentVal.textContent = Math.abs(diff).toFixed(1) + " %";
-                            if (diff > 0) { trendBox.style.color = "#4ade80"; trendIcon.textContent = "trending_up"; }
-                            else if (diff < 0) { trendBox.style.color = "#ef4444"; trendIcon.textContent = "trending_down"; }
-                            else { trendBox.style.color = "#64748b"; trendIcon.textContent = "trending_flat"; }
-                        }
+                    // ✅ 소모품 업데이트: 이미지 테이블 구조에 따라 st.threshold(DB 실제값) 사용
+                    if (data.stocks) {
+                        data.stocks.forEach(function(st) {
+                            if (st.typeKey === 'PAPER_TOWEL') {
+                                if (st.currentLevel !== lastPaperPct) {
+                                    paperChart = initSingleStockChart('paperTowelChart', st.currentLevel, '#8e97a3');
+                                    document.getElementById('ptLabel').textContent = st.currentLevel + '%';
+                                    updateStockBadge('ptBadge', st.currentLevel, st.threshold);
+                                    lastPaperPct = st.currentLevel;
+                                }
+                            }
+                            if (st.typeKey === 'LIQUID_SOAP') {
+                                if (st.currentLevel !== lastSoapPct) {
+                                    soapChart = initSingleStockChart('soapChart', st.currentLevel, '#8e97a3');
+                                    document.getElementById('soapLabel').textContent = st.currentLevel + '%';
+                                    updateStockBadge('soapBadge', st.currentLevel, st.threshold);
+                                    lastSoapPct = st.currentLevel;
+                                }
+                            }
+                        });
                     }
 
-                    if (data.stocks) {
-                        var p = 0, s = 0;
-                        data.stocks.forEach(function(st){
-                            if (st.typeKey === 'PAPER_TOWEL') p = st.currentLevel;
-                            if (st.typeKey === 'LIQUID_SOAP') s = st.currentLevel;
-                        });
-                        if (p !== lastPaperPct || s !== lastSoapPct) {
-                            var sGray = '#8e97a3';
-                            paperChart = initSingleStockChart('paperTowelChart', p, sGray);
-                            soapChart  = initSingleStockChart('soapChart', s, sGray);
-                            document.getElementById('ptLabel').textContent = p + '%';
-                            document.getElementById('soapLabel').textContent = s + '%';
-                            updateStockBadge('ptBadge', p);
-                            updateStockBadge('soapBadge', s);
-                            lastPaperPct = p; lastSoapPct = s;
+                    if (data.todaySum !== undefined) document.querySelector('.kpi-value').textContent = data.todaySum;
+                    if (data.diffPercent !== undefined) {
+                        var tb = document.getElementById('trendBox'), ti = document.getElementById('trendIcon'), pv = document.getElementById('percentVal');
+                        if (data.diffPercent === "-") {
+                            pv.textContent = "- %"; tb.style.color = "#64748b"; ti.textContent = "trending_flat";
+                        } else {
+                            var d = parseFloat(data.diffPercent); pv.textContent = Math.abs(d).toFixed(1) + " %";
+                            if (d > 0) { tb.style.color = "#4ade80"; ti.textContent = "trending_up"; }
+                            else if (d < 0) { tb.style.color = "#ef4444"; ti.textContent = "trending_down"; }
+                            else { tb.style.color = "#64748b"; ti.textContent = "trending_flat"; }
                         }
                     }
                 });
