@@ -71,6 +71,12 @@ html, body {
     gap: 8px;
 }
 
+/* ✅ 추가(요청사항): 임계치 초과 시 연한 빨강 */
+.status-item.status-alert{
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
 .status-item .label { font-size: 12px; color: #64748b; font-weight: 700; display: block; }
 .status-item .value { font-size: 1.3rem; font-weight: 900; }
 
@@ -83,23 +89,48 @@ html, body {
 /* ===== 재고 영역 ===== */
 .stock-section { flex: 1; display: flex; flex-direction: column; justify-content: space-around; gap: 14px; }
 .stock-item { display: flex; flex-direction: column; }
-.stock-info { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; font-weight: 700; color: #475569; }
+.stock-info { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; font-weight: 700; color: #475569; align-items: center; }
 
-/* ✅ ECharts 재고바 컨테이너(높이 고정해서 레이아웃 안깨짐) */
-.mini-stock-chart{
-    height: 12px;
-    width: 100%;
-    border-radius: 6px;
-    overflow: hidden;
+/* ✅ 추가: 왼쪽(제목 + 배지) 묶음 */
+.stock-left{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
+
+/* ✅ 둥근 직사각형 배지 */
+.stock-badge{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 20px;
+    padding: 0 10px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+
+/* 충분 */
+.stock-badge.status-sufficient{
+    background: #ecfdf5;
+    border-color: #bbf7d0;
+    color: #16a34a;
+}
+
+/* 부족 */
+.stock-badge.status-insufficient{
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #dc2626;
+}
+
+.mini-stock-chart{ height: 12px; width: 100%; border-radius: 6px; overflow: hidden; }
 
 /* ===== 차트 캔버스 ===== */
-.chart-canvas{
-    flex: 1;
-    min-height: 0;
-    width: 100%;
-    height: 100%;
-}
+.chart-canvas{ flex: 1; min-height: 0; width: 100%; height: 100%; }
 
 /* ===== KPI 카드 ===== */
 .kpi-card { background: linear-gradient(135deg, #1e2a78 0%, #17215e 100%); color: white; position: relative; overflow: hidden; padding: 0 !important; }
@@ -110,18 +141,12 @@ html, body {
 .kpi-unit { font-size: 1.5rem; opacity: 0.8; font-weight: 700; margin-top: 15px; }
 .kpi-footer { background: rgba(0,0,0,0.2); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
 
-/* 증감률 색상 수정 (JS에서 style.color로 제어하므로 초기 클래스용) */
-.trend-inc { color: #4ade80 !important; display: flex; align-items: center; font-weight: 700; gap: 4px; }
-.trend-dec { color: #ef4444 !important; display: flex; align-items: center; font-weight: 700; gap: 4px; }
-.trend-flat { color: #94a3b8 !important; display: flex; align-items: center; font-weight: 700; gap: 4px; }
-
 #real-time-clock {
     min-width: 180px !important;
     display: inline-block !important;
     text-align: center !important;
     font-family: 'Roboto Mono', monospace !important;
     background: rgba(255,255,255,0.15) !important;
-    font-variant-numeric: tabular-nums;
     border-radius: 20px;
     padding: 4px 15px;
 }
