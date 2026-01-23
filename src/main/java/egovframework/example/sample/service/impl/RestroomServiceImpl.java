@@ -2,20 +2,22 @@ package egovframework.example.sample.service.impl;
 
 import java.util.*;
 import javax.annotation.Resource;
+
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional; 
+import org.springframework.transaction.annotation.Transactional;
+
 import egovframework.example.sample.service.*;
 
 @Service("restroomService")
 public class RestroomServiceImpl implements RestroomService {
-    
+
     @Resource(name="restroomMapper")
     private RestroomMapper mapper;
 
     @Override
     public Map<String, Object> getDashboardData() throws Exception {
         Map<String, Object> totalData = new HashMap<>();
-        
+
         totalData.put("stalls", mapper.selectStallList());
         totalData.put("temp", mapper.selectLatestSensor("TEMP"));
         totalData.put("humi", mapper.selectLatestSensor("HUMIDITY"));
@@ -24,13 +26,16 @@ public class RestroomServiceImpl implements RestroomService {
         totalData.put("todayVisitor", mapper.selectTodayVisitor());
         totalData.put("hourlyStats", mapper.selectHourlyStats());
         totalData.put("settings", mapper.selectAlertSettings());
-        
+
+        // ✅ 추가(임계치 DB 연결): 센서 임계치 전체 내려주기
+        totalData.put("thresholds", mapper.selectAllThresholds());
+
         VisitorVO compare = mapper.selectVisitComparison();
         int todaySum = compare.getTodayCount();
         int yesterdaySum = compare.getYesterdayCount();
 
         if (yesterdaySum == 0) {
-            totalData.put("diffPercent", "-"); 
+            totalData.put("diffPercent", "-");
         } else {
             double percent = ((double)(todaySum - yesterdaySum) / yesterdaySum) * 100;
             totalData.put("diffPercent", String.format("%.1f", percent));
@@ -38,14 +43,14 @@ public class RestroomServiceImpl implements RestroomService {
 
         totalData.put("todaySum", todaySum);
         totalData.put("yesterdaySum", yesterdaySum);
-        
+
         return totalData;
     }
 
     @Override
     public Map<String, Object> getThresholdSettings() throws Exception {
         Map<String, Object> settings = new HashMap<>();
-        settings.put("thresholds", mapper.selectAllThresholds()); 
+        settings.put("thresholds", mapper.selectAllThresholds());
         settings.put("alerts", mapper.selectAlertSettings());
         settings.put("consumables", mapper.selectConsumableThresholds());
         return settings;
@@ -69,8 +74,7 @@ public class RestroomServiceImpl implements RestroomService {
 
             ThresholdVO vo = new ThresholdVO();
             vo.setSensorType(dbTypes[i]);
-            
-            // Null 체크 후 안전하게 숫자 변환 (피플카운트 NPE 방지)
+
             Object realertObj = sData.get("realertMin");
             int realertMin = (realertObj != null) ? Integer.parseInt(String.valueOf(realertObj)) : 10;
             vo.setAlertInterval(realertMin);
@@ -78,8 +82,8 @@ public class RestroomServiceImpl implements RestroomService {
             if ("nh3".equals(sensors[i])) {
                 vo.setMinValue(Double.parseDouble(String.valueOf(sData.get("warning"))));
                 vo.setMaxValue(Double.parseDouble(String.valueOf(sData.get("critical"))));
-            } else if ("people".equals(sensors[i])) { 
-                vo.setMinValue(0.0); // 하한값 0 고정
+            } else if ("people".equals(sensors[i])) {
+                vo.setMinValue(0.0);
                 vo.setMaxValue(Double.parseDouble(String.valueOf(sData.get("high"))));
             } else {
                 vo.setMinValue(Double.parseDouble(String.valueOf(sData.get("low"))));
@@ -99,11 +103,10 @@ public class RestroomServiceImpl implements RestroomService {
 
             AlertSettingVO vo = new AlertSettingVO();
             vo.setSensorType(dbTypes[i]);
-            
-            // Boolean 값을 안전하게 정수(0/1)로 변환
+
             boolean isAlert = Boolean.parseBoolean(String.valueOf(sData.get("alert")));
             vo.setIsEnabled(isAlert ? 1 : 0);
-            
+
             mapper.updateAlertSetting(vo);
         }
     }
@@ -118,10 +121,9 @@ public class RestroomServiceImpl implements RestroomService {
 
             StockVO vo = new StockVO();
             vo.setTypeKey(dbTypes[i]);
-            
-            // 문자열을 거쳐 안전하게 Integer 변환
+
             vo.setThreshold(Integer.parseInt(String.valueOf(sData.get("threshold"))));
-            
+
             mapper.updateConsumableThreshold(vo);
         }
     }

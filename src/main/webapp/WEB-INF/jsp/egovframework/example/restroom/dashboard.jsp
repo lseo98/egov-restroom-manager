@@ -5,7 +5,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Restroom Management System</title>
+    <title>Smart Restroom Management System</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Roboto+Mono&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="<c:url value='/css/egovframework/dashboard.css'/>">
@@ -47,23 +47,19 @@
 
                 <div class="card">
                     <div class="title">화장실 운영 상태</div>
-
                     <div class="status-grid">
-                        <!-- ✅ 변경: id만 추가 (임계치 초과 시 배경색 토글용) -->
                         <div class="status-item" id="tempBox">
                             <span class="material-icons status-icon" style="color:#ef4444;">thermostat</span>
                             <span class="label">온도</span>
                             <div class="value val-temp">${data.temp.value}°C</div>
                         </div>
 
-                        <!-- ✅ 변경: id만 추가 -->
                         <div class="status-item" id="humBox">
                             <span class="material-icons status-icon" style="color:#0ea5e9;">water_drop</span>
                             <span class="label">습도</span>
                             <div class="value val-hum">${data.humi.value}%</div>
                         </div>
 
-                        <!-- ✅ 변경: id만 추가 -->
                         <div class="status-item" id="odorBox">
                             <span class="material-icons status-icon" style="color:#6bcb77;">science</span>
                             <span class="label">악취(NH3)</span>
@@ -72,7 +68,6 @@
                     </div>
 
                     <div class="stock-section">
-
                         <div class="stock-item">
                             <div class="stock-info">
                                 <span class="stock-left">
@@ -94,7 +89,6 @@
                             </div>
                             <div id="soapChart" class="mini-stock-chart"></div>
                         </div>
-
                     </div>
                 </div>
 
@@ -122,6 +116,7 @@
     <script>
         var lastTimeStr = "", lastPaperPct = -1, lastSoapPct = -1;
         var occChart = null, paperChart = null, soapChart = null;
+        var thresholdMap = null;
 
         function initClock() {
             var el = document.getElementById('real-time-clock');
@@ -135,14 +130,10 @@
         }
 
         function initChart(labels, values) {
-            if (!labels) labels = [];
-            if (!values) values = [];
-
             var dom = document.getElementById('chartCanvas');
             if (!dom) return;
             if (occChart) occChart.dispose();
             occChart = echarts.init(dom);
-
             occChart.setOption({
                 grid: { left: 34, right: 18, top: 18, bottom: 28 },
                 tooltip: { trigger: 'axis' },
@@ -155,100 +146,72 @@
         function initSingleStockChart(domId, pct, fillColor) {
             var dom = document.getElementById(domId);
             if (!dom) return null;
-
             var inst = echarts.getInstanceByDom(dom);
             if (inst) inst.dispose();
-
             var chart = echarts.init(dom);
             var safePct = Math.max(0, Math.min(100, Number(pct) || 0));
-
             chart.setOption({
                 animation: true,
                 grid: { left: 0, right: 0, top: 0, bottom: 0 },
                 xAxis: { type: 'value', min: 0, max: 100, show: false },
                 yAxis: { type: 'category', data: [''], show: false },
                 series: [
-                    {
-                        type: 'bar',
-                        data: [100],
-                        barWidth: 12,
-                        barGap: '-100%',
-                        silent: true,
-                        emphasis: { disabled: true },
-                        itemStyle: { color: '#e2e8f0', borderRadius: 6 }
-                    },
-                    {
-                        type: 'bar',
-                        data: [safePct],
-                        barWidth: 12,
-                        z: 3,
-                        emphasis: { disabled: true },
-                        itemStyle: { color: fillColor, borderRadius: 6 }
-                    }
+                    { type: 'bar', data: [100], barWidth: 12, barGap: '-100%', silent: true, itemStyle: { color: '#e2e8f0', borderRadius: 6 } },
+                    { type: 'bar', data: [safePct], barWidth: 12, z: 3, itemStyle: { color: fillColor, borderRadius: 6 } }
                 ]
             });
-
             return chart;
         }
 
         function updateStockBadge(id, pct) {
             var el = document.getElementById(id);
             if (!el) return;
-
             var safePct = Number(pct) || 0;
             var isLow = safePct <= 30;
-
             el.className = 'stock-badge ' + (isLow ? 'status-insufficient' : 'status-sufficient');
             el.textContent = isLow ? '부족' : '충분';
         }
 
-        /* ✅ 추가: 임계치 초과 판별(서버 응답 형태 여러 케이스 호환) */
-        function isThresholdOver(sensorObj) {
-            if (!sensorObj) return false;
-
-            if (sensorObj.isOver === true) return true;
-            if (sensorObj.over === true) return true;
-            if (sensorObj.isCritical === true) return true;
-            if (sensorObj.critical === true) return true;
-
-            var st = (sensorObj.status || sensorObj.level || sensorObj.severity || "").toString().toUpperCase();
-            if (st === "CRITICAL" || st === "DANGER" || st === "ALERT" || st === "OVER") return true;
-
-            var v = Number(sensorObj.value);
-            if (isNaN(v)) return false;
-
-            if (sensorObj.threshold !== undefined && sensorObj.threshold !== null) {
-                var th = Number(sensorObj.threshold);
-                if (!isNaN(th) && v > th) return true;
-            }
-
-            var hi = sensorObj.highThreshold ?? sensorObj.maxThreshold ?? sensorObj.upperLimit;
-            var lo = sensorObj.lowThreshold  ?? sensorObj.minThreshold ?? sensorObj.lowerLimit;
-
-            if (hi !== undefined && hi !== null) {
-                var nhi = Number(hi);
-                if (!isNaN(nhi) && v > nhi) return true;
-            }
-            if (lo !== undefined && lo !== null) {
-                var nlo = Number(lo);
-                if (!isNaN(nlo) && v < nlo) return true;
-            }
-
-            return false;
+        function buildThresholdMap(thresholds) {
+            var m = {};
+            if (!thresholds || !thresholds.length) return m;
+            thresholds.forEach(function(t){
+                if (!t || !t.sensorType) return;
+                m[t.sensorType] = { min: Number(t.minValue), max: Number(t.maxValue) };
+            });
+            return m;
         }
 
-        /* ✅ 추가: 배경색 토글 */
-        function setAlertBox(boxId, isOver) {
+        // ✅ 요구사항 로직 구현: 센서별 상태 클래스 반환
+        function getStatusClass(sensorObj, sensorType) {
+            if (!sensorObj || !thresholdMap || !thresholdMap[sensorType]) return '';
+            var v = Number(sensorObj.value);
+            if (isNaN(v)) return '';
+            var th = thresholdMap[sensorType];
+
+            if (sensorType === 'NH3') {
+                if (!isNaN(th.max) && v > th.max) return 'status-alert';   // Critical (빨강)
+                if (!isNaN(th.min) && v > th.min) return 'status-warning'; // Warning (노랑)
+            } else {
+                // TEMP, HUMIDITY: 범위를 벗어나면 무조건 빨강
+                if ((!isNaN(th.min) && v < th.min) || (!isNaN(th.max) && v > th.max)) return 'status-alert';
+            }
+            return '';
+        }
+
+        function setAlertBox(boxId, statusClass) {
             var el = document.getElementById(boxId);
             if (!el) return;
-            if (isOver) el.classList.add('status-alert');
-            else el.classList.remove('status-alert');
+            el.classList.remove('status-alert', 'status-warning');
+            if (statusClass) el.classList.add(statusClass);
         }
 
         function updateRealTime() {
             fetch('${pageContext.request.contextPath}/getDashboardData.do?t=' + new Date().getTime())
                 .then(function(r){ return r.json(); })
                 .then(function(data){
+                    if (thresholdMap === null) thresholdMap = buildThresholdMap(data.thresholds);
+
                     if (data.stalls) {
                         data.stalls.forEach(function(stall, index){
                             var rect = document.querySelectorAll('.stall')[index];
@@ -265,26 +228,20 @@
                     if (data.humi) document.querySelector('.val-hum').textContent = data.humi.value + "%";
                     if (data.nh3)  document.querySelector('.val-odor').textContent = data.nh3.value + "ppm";
 
-                    /* ✅ 변경(요청사항): 임계치 초과 시 3개 네모 연빨강 */
-                    setAlertBox('tempBox', isThresholdOver(data.temp));
-                    setAlertBox('humBox',  isThresholdOver(data.humi));
-                    setAlertBox('odorBox', isThresholdOver(data.nh3));
+                    // ✅ 색상 업데이트 적용
+                    setAlertBox('tempBox', getStatusClass(data.temp, 'TEMP'));
+                    setAlertBox('humBox',  getStatusClass(data.humi, 'HUMIDITY'));
+                    setAlertBox('odorBox', getStatusClass(data.nh3,  'NH3'));
 
                     if (data.todaySum !== undefined) document.querySelector('.kpi-value').textContent = data.todaySum;
 
                     if (data.diffPercent !== undefined) {
-                        var trendBox = document.getElementById('trendBox');
-                        var trendIcon = document.getElementById('trendIcon');
-                        var percentVal = document.getElementById('percentVal');
-
+                        var trendBox = document.getElementById('trendBox'), trendIcon = document.getElementById('trendIcon'), percentVal = document.getElementById('percentVal');
                         if (data.diffPercent === "-") {
-                            percentVal.textContent = "- %";
-                            trendBox.style.color = "#64748b";
-                            trendIcon.textContent = "trending_flat";
+                            percentVal.textContent = "- %"; trendBox.style.color = "#64748b"; trendIcon.textContent = "trending_flat";
                         } else {
                             var diff = parseFloat(data.diffPercent);
                             percentVal.textContent = Math.abs(diff).toFixed(1) + " %";
-
                             if (diff > 0) { trendBox.style.color = "#4ade80"; trendIcon.textContent = "trending_up"; }
                             else if (diff < 0) { trendBox.style.color = "#ef4444"; trendIcon.textContent = "trending_down"; }
                             else { trendBox.style.color = "#64748b"; trendIcon.textContent = "trending_flat"; }
@@ -293,25 +250,19 @@
 
                     if (data.stocks) {
                         var p = 0, s = 0;
-
                         data.stocks.forEach(function(st){
                             if (st.typeKey === 'PAPER_TOWEL') p = st.currentLevel;
                             if (st.typeKey === 'LIQUID_SOAP') s = st.currentLevel;
                         });
-
                         if (p !== lastPaperPct || s !== lastSoapPct) {
-                            var sGray = '#8e97a3'; // ✅ 기존 그대로(요청사항 아님)
+                            var sGray = '#8e97a3';
                             paperChart = initSingleStockChart('paperTowelChart', p, sGray);
                             soapChart  = initSingleStockChart('soapChart', s, sGray);
-
                             document.getElementById('ptLabel').textContent = p + '%';
                             document.getElementById('soapLabel').textContent = s + '%';
-
                             updateStockBadge('ptBadge', p);
                             updateStockBadge('soapBadge', s);
-
-                            lastPaperPct = p;
-                            lastSoapPct = s;
+                            lastPaperPct = p; lastSoapPct = s;
                         }
                     }
                 });
@@ -319,17 +270,13 @@
 
         window.onload = function() {
             initClock();
-
             var hL = [], hV = [];
             <c:forEach var="h" items="${data.hourlyStats}">
-                hL.push("${h.hourId}시");
-                hV.push(${h.visitCount});
+                hL.push("${h.hourId}시"); hV.push(${h.visitCount});
             </c:forEach>
-
             initChart(hL, hV);
             updateRealTime();
             setInterval(updateRealTime, 3000);
-
             window.addEventListener('resize', function(){
                 if (occChart) occChart.resize();
                 if (paperChart) paperChart.resize();
