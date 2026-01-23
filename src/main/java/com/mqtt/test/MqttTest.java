@@ -15,8 +15,12 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+/**
+ * 스마트 화장실 IoT 데이터 관리 및 모니터링 시스템
+ * MQTT를 통해 수신된 센서 데이터를 분석하여 DB 저장 및 알림을 수행함
+ */
 public class MqttTest {
-    // 설정 정보를 담을 변수들
+    // 서버 및 데이터베이스 설정 변수
     static String serverIp; 
     static String broker;
     static String dbUrl; 
@@ -25,29 +29,32 @@ public class MqttTest {
 
     static Connection conn = null;
     static String lastProcessDate = ""; 
+    // 알림 중복 방지를 위한 센서별 마지막 발송 시간 저장
     static java.util.Map<String, Long> lastAlertTimeMap = new java.util.HashMap<>();
 
     public static void main(String[] args) {
         try {
-            // 1. 설정 파일 로드
+            // 1. 시스템 설정 로드 (config.properties)
             loadConfig();
             
             System.out.println(">>> [시스템] 스마트 화장실 관리 모듈 가동 시작...");
             
-            // 2. DB 연결
+            // 2. 데이터베이스(MariaDB) 연결 설정
             Class.forName("org.mariadb.jdbc.Driver");
             conn = DriverManager.getConnection(dbUrl, dbUser, dbPass);
             System.out.println(">>> [DB] MariaDB 연결 성공!");
 
+            // 3. 자정 통계 초기화 확인 및 소모품 시뮬레이션 시작
             checkMidnightReset();
             startConsumableSimulation();
 
-            // 3. MQTT 클라이언트 설정
+            // 4. MQTT 클라이언트 초기화 및 연결 설정
             MqttClient client = new MqttClient(broker, "JavaClient_" + System.currentTimeMillis(), new MemoryPersistence());
             MqttConnectOptions options = new MqttConnectOptions();
             options.setAutomaticReconnect(true); 
             options.setCleanSession(true);
 
+            // 5. MQTT 메시지 수신 이벤트 콜백 설정
             client.setCallback(new MqttCallback() {
                 @Override
                 public void messageArrived(String topic, MqttMessage message) throws Exception {
@@ -60,27 +67,34 @@ public class MqttTest {
                         JSONObject json = new JSONObject(payload);
                         String deviceName = json.optString("deviceName", "이름없음");
 
+                        // 장치 이름에 따른 화장실 칸(Stall) ID 매핑
                         int stallId = 1; 
                         if (deviceName.contains("책상센서")) stallId = 2;
                         else if (deviceName.contains("식당5번")) stallId = 3;
                         else if (deviceName.contains("식당7번")) stallId = 4;
                         
+                        // 재실 센서 데이터 처리
                         if (json.has("occupancy")) {
                             double val = json.getDouble("occupancy");
-                            saveToDb(stallId, "OCCUPANCY", val);
+                            String occStatus = (val == 1.0) ? "occupied" : "vacant"; 
+                            
+                            saveToDb(stallId, "OCCUPANCY", val, occStatus); 
                             updateStallStatus(stallId, val == 1.0);
                         }
                         
+                        // 환경 센서 데이터(온도, 습도, 암모니아) 처리
                         if (json.has("temperature")) processSensorData("TEMP", json.getDouble("temperature"));
                         if (json.has("humidity")) processSensorData("HUMIDITY", json.getDouble("humidity"));
                         if (json.has("nh3")) processSensorData("NH3", json.getDouble("nh3"));
 
+                        // 구역 내 유동인구 데이터 처리
                         if (json.has("region_trigger_data")) {
                             JSONObject regionData = json.getJSONObject("region_trigger_data");
                             JSONArray regions = regionData.getJSONArray("region_count_data");
                             if (regions.length() > 0) {
                                 int currentTotal = regions.getJSONObject(0).getInt("current_total");
-                                saveToDb(0, "PEOPLE_IN", (double)currentTotal);
+                                // PEOPLE_IN 데이터는 별도의 상태 없이 저장
+                                saveToDb(0, "PEOPLE_IN", (double)currentTotal, null);
                                 for(int i=0; i < currentTotal; i++) {
                                     updateVisitorStats();
                                 }
@@ -95,7 +109,7 @@ public class MqttTest {
             });
 
             client.connect(options);
-            client.subscribe("#");
+            client.subscribe("#"); // 모든 토픽 구독
             System.out.println(">>> [MQTT] 서버 구독 성공! 데이터를 기다리는 중...");
 
             while (true) { Thread.sleep(100); }
@@ -105,12 +119,10 @@ public class MqttTest {
     }
 
     /**
-     * 외부 설정 파일을 읽어오는 함수
+     * 외부 설정 파일(config.properties) 로드
      */
     private static void loadConfig() throws IOException {
         Properties prop = new Properties();
-        
-        // 프로젝트의 src/main/resources 폴더 내 파일을 읽어옵니다.
         try (InputStream is = MqttTest.class.getClassLoader().getResourceAsStream("config.properties")) {
             if (is == null) {
                 throw new FileNotFoundException("config.properties 파일을 resources 폴더에서 찾을 수 없습니다.");
@@ -124,6 +136,9 @@ public class MqttTest {
         }
     }
 
+    /**
+     * 날짜 변경 시 방문객 통계 초기화 및 어제 데이터 백업
+     */
     private static void checkMidnightReset() {
         String todayDate = java.time.LocalDate.now().toString();
         String lastUpdateInDb = "";
@@ -140,6 +155,7 @@ public class MqttTest {
             System.out.println(">>> [날짜 확인 에러] " + e.getMessage());
         }
 
+        // DB 기록 날짜와 오늘 날짜가 다를 경우 초기화 수행
         if (!todayDate.equals(lastUpdateInDb)) {
             System.out.println(">>> [시스템] 날짜 변경 감지 (DB: " + lastUpdateInDb + " -> 오늘: " + todayDate + ")");
             String shiftSql = "UPDATE hourly_stats SET yesterday_count = visit_count, visit_count = 0";
@@ -156,31 +172,74 @@ public class MqttTest {
         lastProcessDate = todayDate;
     }
 
+    /**
+     * 센서 임계치 비교 및 상태(normal, warning, critical) 판별
+     */
     private static void processSensorData(String type, double value) {
-        saveToDb(0, type, value);
+        String status = "normal";
+        String alertType = "";
+        String alertTitle = "";
+
+        // DB에서 센서별 임계치(min/max) 및 알림 주기 로드
         String selectSql = "SELECT min_value, max_value, alert_interval FROM sensor_threshold WHERE sensor_type = ?";
+        
         try (PreparedStatement pstmt = conn.prepareStatement(selectSql)) {
             pstmt.setString(1, type);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    double min = rs.getDouble("min_value");
-                    double max = rs.getDouble("max_value");
+                    double minVal = rs.getDouble("min_value");
+                    double maxVal = rs.getDouble("max_value");
                     int intervalMin = rs.getInt("alert_interval");
-                    if (rs.wasNull()) intervalMin = 10; 
-                    if ((!rs.wasNull() && value < min) || (max > 0 && value > max)) {
-                        String alertType = type.equals("TEMP") ? "TEMP_ABNORMAL" : 
-                                         type.equals("HUMIDITY") ? "HUMIDITY_ABNORMAL" : "STINK_HIGH";
+                    if (rs.wasNull()) intervalMin = 10;
+
+                    // 상태 판별 로직
+                    if (type.equals("NH3")) {
+                        // NH3는 주의(min 이상)와 위험(max 이상) 2단계 알림
+                        if (value >= maxVal) { 
+                            status = "critical";
+                            alertType = "STINK_CRITICAL";
+                            alertTitle = "악취 [위험] 감지";
+                        } else if (value >= minVal) {
+                            status = "warning";
+                            alertType = "STINK_WARNING";
+                            alertTitle = "악취 [주의] 발생";
+                        }
+                    } else {
+                        // 기타 센서는 범위를 벗어나면 무조건 warning 처리
+                        if ((!rs.wasNull() && value < minVal) || (maxVal > 0 && value > maxVal)) {
+                            status = "warning";
+                            alertType = type + "_ABNORMAL";
+                            alertTitle = type + " 수치 이상 발생";
+                        }
+                    }
+
+                    saveToDb(0, type, value, status);
+
+                    // 이상 수치 발견 시 알림 주기(dynamicIntervalMs)에 맞춰 알림 생성
+                    if (!status.equals("normal")) {
                         long dynamicIntervalMs = intervalMin * 60 * 1000L;
-                        checkAndCreateAlert(alertType, type + " 수치 이상 발생", "현재값: " + value, dynamicIntervalMs);
+                        checkAndCreateAlert(alertType, alertTitle, "현재값: " + value, dynamicIntervalMs);
                     }
                 }
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            System.out.println(">>> [데이터 처리 에러] " + e.getMessage());
+        }
     }
-
+    
+    /**
+     * 방문객 통계 업데이트 (영업시간 제한 로직 포함)
+     */
     private static void updateVisitorStats() {
         int currentHour = LocalTime.now().getHour();
         checkMidnightReset(); 
+        
+        // 08:00 ~ 18:59 사이의 데이터만 통계에 반영
+        if (currentHour < 8 || currentHour > 18) {
+            System.out.println(">>> [시스템] 영업 외 시간(08:00~18:59 제외) 방문객은 통계에서 제외합니다. (현재: " + currentHour + "시)");
+            return;
+        }
+        
         String updateDaily = "UPDATE visitor_manager SET daily_count = daily_count + 1 WHERE manager_id = 1";
         String updateHourly = "UPDATE hourly_stats SET visit_count = visit_count + 1 WHERE hour_id = ?";
         String selectCumulative = "SELECT SUM(visit_count) AS today_sum, SUM(yesterday_count) AS yesterday_sum FROM hourly_stats WHERE hour_id <= ?";
@@ -192,6 +251,7 @@ public class MqttTest {
             psDaily.executeUpdate(); 
             psHourly.setInt(1, currentHour);
             psHourly.executeUpdate(); 
+            
             psSum.setInt(1, currentHour);
             try (ResultSet rsSum = psSum.executeQuery()) {
                 if (rsSum.next()) {
@@ -203,6 +263,7 @@ public class MqttTest {
                     System.out.println(">>> 오늘 누적: " + todayCumulative + "명 / 어제 동시간 누적: " + yesterdayCumulative + "명 " + trend);
                 }
             }
+            // 10명 단위로 누적 이용객 알림 생성
             try (ResultSet rsD = psSelectD.executeQuery()) {
                 if (rsD.next()) {
                     int count = rsD.getInt("daily_count");
@@ -216,44 +277,79 @@ public class MqttTest {
         }
     }
 
+    /**
+     * 소모품 잔량 시뮬레이션 및 부족 시 알림 처리
+     */
     private static void updateAndSaveLevel(String typeKey) {
-        int randomRefillPoint = (int)(Math.random() * 8) + 3; 
-        String updateSql = "UPDATE consumable SET current_level = CASE WHEN current_level <= ? THEN 100 ELSE current_level - 1 END WHERE type_key = ?";
         String selectSql = "SELECT current_level, threshold FROM consumable WHERE type_key = ?";
-        try (PreparedStatement pstmtUpdate = conn.prepareStatement(updateSql);
-             PreparedStatement pstmtSelect = conn.prepareStatement(selectSql)) {
-            pstmtUpdate.setInt(1, randomRefillPoint);
-            pstmtUpdate.setString(2, typeKey);
-            pstmtUpdate.executeUpdate();
-            pstmtSelect.setString(1, typeKey);
-            try (ResultSet rs = pstmtSelect.executeQuery()) {
+        String updateSql = "UPDATE consumable SET current_level = ? WHERE type_key = ?";
+        
+        try (PreparedStatement psSelect = conn.prepareStatement(selectSql);
+             PreparedStatement psUpdate = conn.prepareStatement(updateSql)) {
+            
+            psSelect.setString(1, typeKey);
+            try (ResultSet rs = psSelect.executeQuery()) {
                 if (rs.next()) {
-                    int level = rs.getInt("current_level");
+                    int current = rs.getInt("current_level");
                     int threshold = rs.getInt("threshold");
-                    saveToDb(0, typeKey, (double)level);
-                    if (level == threshold) {
-                        createAlert("CONSUMABLE_LOW", typeKey + " 잔량 부족", "현재 잔량: " + level + "%");
+                    int nextLevel;
+                    String status = "normal";
+
+                    // 0% 도달 시 즉시 100% 리필, 그 외에는 랜덤(2~7%) 감소
+                    if (current <= 0) {
+                        nextLevel = 100;
+                        status = "refilled";
+                    } else {
+                        int decrease = (int)(Math.random() * 6) + 2; 
+                        nextLevel = Math.max(0, current - decrease);
+                        
+                        if (nextLevel <= 0) {
+                            nextLevel = 0;
+                            status = "warning"; 
+                        } else if (nextLevel <= threshold) {
+                            status = "warning";
+                        }
+                    }
+
+                    psUpdate.setInt(1, nextLevel);
+                    psUpdate.setString(2, typeKey);
+                    psUpdate.executeUpdate();
+                    
+                    saveToDb(0, typeKey, (double)nextLevel, status);
+
+                    if (status.equals("warning")) {
+                        createAlert("CONSUMABLE_LOW", typeKey + " 잔량 부족", "현재 잔량: " + nextLevel + "%");
                     }
                 }
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            System.out.println(">>> [소모품 에러] " + e.getMessage());
+        }
     }
 
-    private static void saveToDb(int stallId, String type, double value) {
-        String sql = "INSERT INTO sensor_reading (stall_id, sensor_type, value) VALUES (?, ?, ?)";
+    /**
+     * 센서 데이터를 DB(sensor_reading)에 저장
+     */
+    private static void saveToDb(int stallId, String type, double value, String status) {
+        String sql = "INSERT INTO sensor_reading (stall_id, sensor_type, value, status) VALUES (?, ?, ?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) { 
             if (stallId > 0) pstmt.setInt(1, stallId); 
             else pstmt.setNull(1, java.sql.Types.INTEGER); 
             pstmt.setString(2, type);
             pstmt.setDouble(3, value);
+            pstmt.setString(4, status);
             pstmt.executeUpdate();
+            
             if (stallId > 0) System.out.println(">>> [DB저장] " + type + "(" + stallId + "번 칸): " + value);
-            else System.out.println(">>> [DB저장] " + type + ": " + value);
+            System.out.println(">>> [DB저장] " + type + ": " + value + " (상태: " + status + ")");
         } catch (Exception e) {
             System.out.println(">>> [DB저장 에러] " + e.getMessage());
         }
     }
 
+    /**
+     * 화장실 개별 칸의 실시간 재실 상태 업데이트
+     */
     private static void updateStallStatus(int stallId, boolean isOccupied) {
         String sql = "UPDATE stall SET is_occupied = ? WHERE stall_id = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -264,14 +360,21 @@ public class MqttTest {
         } catch (Exception e) {}
     }
 
+    /**
+     * 알림 데이터 생성 (설정 테이블의 On/Off 여부 확인 포함)
+     */
     private static void createAlert(String type, String title, String msg) {
         String sensorType = "";
+        // 알림 타입을 기반으로 설정 테이블 조회용 키 매핑
         if (type.contains("TEMP")) sensorType = "TEMP";
         else if (type.contains("HUMIDITY")) sensorType = "HUMIDITY";
         else if (type.contains("STINK")) sensorType = "NH3";
         else if (type.contains("PEOPLE")) sensorType = "PEOPLE_IN";
         else if (type.contains("CONSUMABLE")) sensorType = title.contains("LIQUID_SOAP") ? "LIQUID_SOAP" : "PAPER_TOWEL";
+        
+        // 사용자가 설정을 껐을 경우 알림 생성 중단
         if (!isAlertEnabled(sensorType)) return;
+        
         String sql = "INSERT INTO alert (alert_type, title, message) VALUES (?, ?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, type);
@@ -284,6 +387,9 @@ public class MqttTest {
         }
     }
     
+    /**
+     * 특정 센서의 알림 설정 활성화 여부 확인
+     */
     private static boolean isAlertEnabled(String sensorType) {
         String sql = "SELECT is_enabled FROM alert_setting WHERE sensor_type = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -295,19 +401,28 @@ public class MqttTest {
         return false;
     }
     
+    /**
+     * 중복 알림 방지를 위한 발송 주기 체크 후 알림 생성
+     */
     private static void checkAndCreateAlert(String type, String title, String msg, long dynamicInterval) {
         long currentTime = System.currentTimeMillis();
         long lastTime = lastAlertTimeMap.getOrDefault(type, 0L);
+        
+        // 지정된 간격이 경과했을 때만 알림 발생
         if (currentTime - lastTime > dynamicInterval) {
             createAlert(type, title, msg);
             lastAlertTimeMap.put(type, currentTime); 
         }
     }
 
+    /**
+     * 소모품(비누, 타올) 시뮬레이션을 위한 백그라운드 스레드 시작
+     */
     private static void startConsumableSimulation() {
         new Thread(() -> {
             while (true) {
                 try {
+                    // 15초마다 감소 로직 수행
                     Thread.sleep(15000);
                     updateAndSaveLevel("LIQUID_SOAP");
                     updateAndSaveLevel("PAPER_TOWEL");
