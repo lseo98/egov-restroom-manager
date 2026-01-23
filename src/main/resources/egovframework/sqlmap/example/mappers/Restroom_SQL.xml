@@ -93,5 +93,18 @@
         SET threshold = #{threshold}
         WHERE type_key = #{typeKey}
     </update>
+	
+	
+	<select id="selectSensorLogList" resultType="egovframework.example.sample.service.SensorVO">
+	    SELECT 
+	        sensor_type AS sensorType, 
+	        value, 
+	        measured_at AS readingTime,
+	        stall_id AS stallId,
+	        status
+	    FROM sensor_reading 
+	    ORDER BY measured_at DESC 
+	    LIMIT 1000
+	</select>
 
 </mapper>

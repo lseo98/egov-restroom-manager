@@ -14,6 +14,8 @@ public interface RestroomMapper {
     List<AlertSettingVO> selectAlertSettings() throws Exception;
     VisitorVO selectVisitComparison() throws Exception;
     
+    List<SensorVO> selectSensorLogList() throws Exception;
+    
     // 1. 임계치 및 알림 설정 조회용 메서드
     List<ThresholdVO> selectAllThresholds() throws Exception;
     List<StockVO> selectConsumableThresholds() throws Exception;
