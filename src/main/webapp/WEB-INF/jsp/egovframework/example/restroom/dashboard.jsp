@@ -121,16 +121,6 @@
         var occChart = null, paperChart = null, soapChart = null;
         var thresholdMap = null;
 
-        function initClock() {
-            var el = document.getElementById('real-time-clock');
-            if (!el) { setTimeout(initClock, 50); return; }
-            function update() {
-                var now = new Date();
-                var current = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-                if (lastTimeStr !== current) { el.textContent = current; lastTimeStr = current; }
-            }
-            update(); setInterval(update, 1000);
-        }
 
         function initChart(labels, values) {
             var dom = document.getElementById('chartCanvas');
@@ -272,7 +262,6 @@
         }
 
         window.onload = function() {
-            initClock();
             var hL = [], hV = [];
             <c:forEach var="h" items="${data.hourlyStats}">
                 hL.push("${h.hourId}시"); hV.push(${h.visitCount});
