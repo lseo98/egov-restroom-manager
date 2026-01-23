@@ -1,4 +1,5 @@
 package egovframework.example.sample.service;
+import java.util.List;
 import java.util.Map;
 
 public interface RestroomService {
@@ -10,4 +11,7 @@ public interface RestroomService {
 
     // 3. 임계치 설정 페이지에서 수정한 모든 설정값 저장
     void updateThresholdSettings(Map<String, Object> data) throws Exception;
+    
+ 	// 센서 로그 데이터
+    List<SensorVO> getSensorLogs() throws Exception;
 }
