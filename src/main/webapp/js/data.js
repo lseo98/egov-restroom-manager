@@ -7,27 +7,73 @@
     const rowsPerPage = 10; // 페이지당 줄 수
 
     function init() {
-        fetchLogs();
-        const btnSearch = document.getElementById("btnSearch");
-        if(btnSearch) btnSearch.onclick = applyFilter;
+    const today = new Date().toISOString().split('T')[0]; // 오늘 날짜 (YYYY-MM-DD)
 
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById("startDate").value = today;
-        document.getElementById("endDate").value = today;
+    // 1. 달력 초기값 설정 및 '미래 날짜' 선택 방지 (max 설정)
+    const startDateInput = document.getElementById("startDate");
+    const endDateInput = document.getElementById("endDate");
+
+    startDateInput.value = today;
+    endDateInput.value = today;
+
+    startDateInput.max = today; // 오늘 이후는 선택 불가
+    endDateInput.max = today;   // 오늘 이후는 선택 불가
+
+    // 2. 달력 상호 제한 로직 실행
+    initDateLimit();
+    
+    // 초기 데이터 로드
+    fetchLogs();
+    
+    const btnSearch = document.getElementById("btnSearch");
+    if(btnSearch) {
+        btnSearch.onclick = function() {
+            fetchLogs();
+        };
     }
+}
+
+    function initDateLimit() {
+	    const startDateInput = document.getElementById("startDate");
+	    const endDateInput = document.getElementById("endDate");
+	    const today = new Date().toISOString().split('T')[0];
+	
+	    // 시작일 변경 시: 종료일의 '최솟값'을 시작일로 제한 (시작일 이전 선택 불가)
+	    startDateInput.addEventListener("change", function() {
+	        if (startDateInput.value) {
+	            endDateInput.min = startDateInput.value;
+	        }
+	    });
+	
+	    // 종료일 변경 시: 시작일의 '최댓값'을 종료일로 제한 (종료일 이후 선택 불가)
+	    // 단, 오늘 날짜보다는 커질 수 없음
+	    endDateInput.addEventListener("change", function() {
+	        if (endDateInput.value) {
+	            startDateInput.max = endDateInput.value;
+	        } else {
+	            startDateInput.max = today;
+	        }
+	    });
+	}
 
     function fetchLogs() {
-        fetch(contextPath + "/getSensorLogs.do")
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === "success") {
-                    allLogs = data.logs || [];
-                    filteredLogs = [...allLogs];
-                    renderPage(1);
-                }
-            })
-            .catch(err => console.error("데이터 로드 실패:", err));
-    }
+	    // 1. 달력 입력창에서 날짜 문자열(YYYY-MM-DD)을 가져옴
+	    const startDate = document.getElementById("startDate").value;
+	    const endDate = document.getElementById("endDate").value;
+	
+	    // 2. URL 뒤에 ?startDate=...&endDate=... 형식으로 파라미터 추가
+	    const url = contextPath + "/getSensorLogs.do?startDate=" + startDate + "&endDate=" + endDate;
+	
+	    fetch(url)
+	        .then(res => res.json())
+	        .then(data => {
+	            if (data.status === "success") {
+	                allLogs = data.logs || [];
+	                applyFilter(); // 가져온 후 센서 종류 필터도 적용
+	            }
+	        })
+	        .catch(err => console.error("조회 실패:", err));
+	}
 
     function applyFilter() {
         const checkedSensors = Array.from(document.querySelectorAll('#sensorFilters input:checked'))
@@ -67,53 +113,47 @@
         renderPagination(pageNum);
     }
 
-    // ✅ 페이지네이션 생성 (10개씩 블록 단위로 표시)
-function renderPagination(currentPage) {
-    const nav = document.getElementById('pagination');
-    const totalPages = Math.ceil(filteredLogs.length / rowsPerPage);
-    
-    if (totalPages <= 1) { 
-        nav.innerHTML = ""; 
-        return; 
+    function renderPagination(currentPage) {
+        const nav = document.getElementById('pagination');
+        const totalPages = Math.ceil(filteredLogs.length / rowsPerPage);
+        
+        if (totalPages <= 1) { 
+            nav.innerHTML = ""; 
+            return; 
+        }
+
+        const pageBlock = 10; 
+        const currentBlock = Math.ceil(currentPage / pageBlock); 
+        const startPage = (currentBlock - 1) * pageBlock + 1; 
+        let endPage = startPage + pageBlock - 1; 
+
+        if (endPage > totalPages) endPage = totalPages; 
+
+        let html = "";
+
+        if (startPage > 1) {
+            html += '<a href="javascript:void(0);" class="page-link nav-arrow" onclick="DataLog.renderPage(' + (startPage - 1) + ')">' +
+                    '<span class="material-icons">first_page</span></a>';
+        }
+
+        html += '<a href="javascript:void(0);" class="page-link nav-arrow" onclick="DataLog.renderPage(' + Math.max(1, currentPage - 1) + ')">' +
+                '<span class="material-icons">chevron_left</span></a>';
+
+        for (let i = startPage; i <= endPage; i++) {
+            html += '<a href="javascript:void(0);" class="page-link ' + (i === currentPage ? 'active' : '') + 
+                    '" onclick="DataLog.renderPage(' + i + ')">' + i + '</a>';
+        }
+
+        html += '<a href="javascript:void(0);" class="page-link nav-arrow" onclick="DataLog.renderPage(' + Math.min(totalPages, currentPage + 1) + ')">' +
+                '<span class="material-icons">chevron_right</span></a>';
+
+        if (endPage < totalPages) {
+            html += '<a href="javascript:void(0);" class="page-link nav-arrow" onclick="DataLog.renderPage(' + (endPage + 1) + ')">' +
+                    '<span class="material-icons">last_page</span></a>';
+        }
+
+        nav.innerHTML = html;
     }
-
-    const pageBlock = 10; // 한 번에 보여줄 페이지 번호 개수
-    const currentBlock = Math.ceil(currentPage / pageBlock); // 현재 페이지가 몇 번째 블록인지 계산
-    const startPage = (currentBlock - 1) * pageBlock + 1; // 블록의 시작 번호 (1, 11, 21...)
-    let endPage = startPage + pageBlock - 1; // 블록의 끝 번호 (10, 20, 30...)
-
-    if (endPage > totalPages) endPage = totalPages; // 전체 페이지를 넘지 않도록 제한
-
-    let html = "";
-
-    // 1. [이전 블록] 화살표: 첫 번째 블록이 아닐 때만 표시
-    if (startPage > 1) {
-        html += '<a href="javascript:void(0);" class="page-link nav-arrow" onclick="DataLog.renderPage(' + (startPage - 1) + ')">' +
-                '<span class="material-icons">first_page</span></a>';
-    }
-
-    // 2. [이전 페이지] 화살표
-    html += '<a href="javascript:void(0);" class="page-link nav-arrow" onclick="DataLog.renderPage(' + Math.max(1, currentPage - 1) + ')">' +
-            '<span class="material-icons">chevron_left</span></a>';
-
-    // 3. [숫자 버튼]: 현재 블록의 시작번호부터 끝번호까지만 반복문 수행
-    for (let i = startPage; i <= endPage; i++) {
-        html += '<a href="javascript:void(0);" class="page-link ' + (i === currentPage ? 'active' : '') + 
-                '" onclick="DataLog.renderPage(' + i + ')">' + i + '</a>';
-    }
-
-    // 4. [다음 페이지] 화살표
-    html += '<a href="javascript:void(0);" class="page-link nav-arrow" onclick="DataLog.renderPage(' + Math.min(totalPages, currentPage + 1) + ')">' +
-            '<span class="material-icons">chevron_right</span></a>';
-
-    // 5. [다음 블록] 화살표: 마지막 블록이 아닐 때만 표시
-    if (endPage < totalPages) {
-        html += '<a href="javascript:void(0);" class="page-link nav-arrow" onclick="DataLog.renderPage(' + (endPage + 1) + ')">' +
-                '<span class="material-icons">last_page</span></a>';
-    }
-
-    nav.innerHTML = html;
-}
 
     window.DataLog = { renderPage: renderPage };
 
