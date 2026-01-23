@@ -10,6 +10,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import egovframework.example.sample.service.RestroomService;
@@ -80,10 +81,18 @@ public class RestroomController {
     }
     @RequestMapping(value = "/getSensorLogs.do")
     @ResponseBody
-    public Map<String, Object> getSensorLogs() throws Exception {
+    public Map<String, Object> getSensorLogs(
+            @RequestParam(value="startDate", required=false) String startDate,
+            @RequestParam(value="endDate", required=false) String endDate) throws Exception {
+        
+        // 파라미터를 Map에 담아 서비스로 전달합니다.
+        Map<String, Object> paramMap = new HashMap<>();
+        paramMap.put("startDate", startDate);
+        paramMap.put("endDate", endDate);
+
         Map<String, Object> result = new HashMap<>();
         try {
-            List<SensorVO> logs = restroomService.getSensorLogs();
+            List<SensorVO> logs = restroomService.getSensorLogs(paramMap);
             result.put("status", "success");
             result.put("logs", logs);
         } catch (Exception e) {

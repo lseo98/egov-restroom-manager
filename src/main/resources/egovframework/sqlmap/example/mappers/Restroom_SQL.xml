@@ -95,7 +95,7 @@
     </update>
 	
 	
-	<select id="selectSensorLogList" resultType="egovframework.example.sample.service.SensorVO">
+	<select id="selectSensorLogList" parameterType="map" resultType="egovframework.example.sample.service.SensorVO">
 	    SELECT 
 	        sensor_type AS sensorType, 
 	        value, 
@@ -103,8 +103,18 @@
 	        stall_id AS stallId,
 	        status
 	    FROM sensor_reading 
+	    WHERE 1=1
+	    
+	    <if test="startDate != null and startDate != ''">
+	        AND measured_at &gt;= CONCAT(#{startDate}, ' 00:00:00')
+	    </if>
+	    
+	    <if test="endDate != null and endDate != ''">
+	        AND measured_at &lt;= CONCAT(#{endDate}, ' 23:59:59')
+	    </if>
+	    
 	    ORDER BY measured_at DESC 
-	    LIMIT 1000
+	    LIMIT 100000
 	</select>
 
 </mapper>
