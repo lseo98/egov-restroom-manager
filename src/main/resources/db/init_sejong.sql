@@ -68,22 +68,21 @@ CREATE TABLE alert (
 INSERT INTO stall (stall_name) VALUES ('1번 칸'), ('2번 칸'), ('3번 칸'), ('4번 칸');
 
 INSERT INTO consumable (type_key, threshold, unit, current_level) VALUES 
-('LIQUID_SOAP', 10, '%', 100),
-('PAPER_TOWEL', 10, '%', 100);
+('LIQUID_SOAP', 10, '%', 80),
+('PAPER_TOWEL', 10, '%', 40);
 
 INSERT INTO sensor_threshold (sensor_type, min_value, max_value, unit) VALUES 
 ('TEMP', 18.00, 27.00, '℃'),
 ('HUMIDITY', 40.00, 60.00, '%'),
-('NH3', NULL, 5.00, 'ppm'),
+('NH3', 5.00, 10.00, 'ppm'),
 ('PEOPLE_IN', NULL, 10.00, '명');
 
 -- 관리자 한 줄 생성
 INSERT INTO visitor_manager (manager_id, daily_count) VALUES (1, 0);
 
--- 24개 시간대 미리 생성 
+-- 24개 시간대 대신 8시~18시만 생성
 INSERT INTO hourly_stats (hour_id) VALUES 
-(0),(1),(2),(3),(4),(5),(6),(7),(8),(9),(10),(11),
-(12),(13),(14),(15),(16),(17),(18),(19),(20),(21),(22),(23);
+(8),(9),(10),(11),(12),(13),(14),(15),(16),(17),(18);
 
 ALTER TABLE sensor_threshold ADD COLUMN alert_interval INT DEFAULT 10;
 
@@ -101,3 +100,5 @@ INSERT INTO alert_setting (sensor_type) VALUES
 ('PEOPLE_IN'), 
 ('LIQUID_SOAP'), 
 ('PAPER_TOWEL');
+
+ALTER TABLE sensor_reading ADD COLUMN status VARCHAR(20) DEFAULT 'normal';
