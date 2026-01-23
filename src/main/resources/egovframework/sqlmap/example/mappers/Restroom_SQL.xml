@@ -2,13 +2,13 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="egovframework.example.sample.service.impl.RestroomMapper">
 
-	<select id="selectStallList" resultType="egovframework.example.sample.service.StallVO">
-	    SELECT 
-	        stall_id AS stallId, 
-	        stall_name AS stallName, 
-	        is_occupied AS isOccupied 
-	    FROM stall
-	</select>
+    <select id="selectStallList" resultType="egovframework.example.sample.service.StallVO">
+        SELECT 
+            stall_id AS stallId, 
+            stall_name AS stallName, 
+            is_occupied AS isOccupied 
+        FROM stall
+    </select>
 
     <select id="selectLatestSensor" parameterType="String" resultType="egovframework.example.sample.service.SensorVO">
         SELECT value, measured_at as readingTime 
@@ -48,12 +48,50 @@
             is_enabled AS isEnabled 
         FROM alert_setting
     </select>
+    
+    <select id="selectVisitComparison" resultType="egovframework.example.sample.service.VisitorVO">
+        SELECT 
+            SUM(visit_count) AS todayCount, 
+            SUM(yesterday_count) AS yesterdayCount
+        FROM hourly_stats
+        WHERE hour_id &lt;= HOUR(NOW())
+    </select>
+
+    <resultMap id="ThresholdResultMap" type="egovframework.example.sample.service.ThresholdVO">
+	    <result property="sensorType" column="sensor_type"/>
+	    <result property="minValue" column="min_value"/>
+	    <result property="maxValue" column="max_value"/>
+	    <result property="alertInterval" column="alert_interval"/>
+	</resultMap>
 	
-	<select id="selectVisitComparison" resultType="egovframework.example.sample.service.VisitorVO">
-	    SELECT 
-	        SUM(visit_count) AS todayCount, 
-	        SUM(yesterday_count) AS yesterdayCount
-	    FROM hourly_stats
-	    WHERE hour_id &lt;= HOUR(NOW())
+	<select id="selectAllThresholds" resultMap="ThresholdResultMap">
+	    SELECT sensor_type, min_value, max_value, alert_interval 
+	    FROM sensor_threshold
 	</select>
+	
+	<select id="selectConsumableThresholds" resultType="egovframework.example.sample.service.StockVO">
+        SELECT type_key AS typeKey, current_level AS currentLevel, threshold FROM consumable
+    </select>
+
+    <update id="updateSensorThreshold" parameterType="egovframework.example.sample.service.ThresholdVO">
+        UPDATE sensor_threshold 
+        SET 
+            min_value = #{minValue}, 
+            max_value = #{maxValue}, 
+            alert_interval = #{alertInterval}
+        WHERE sensor_type = #{sensorType}
+    </update>
+
+    <update id="updateAlertSetting" parameterType="egovframework.example.sample.service.AlertSettingVO">
+        UPDATE alert_setting 
+        SET is_enabled = #{isEnabled}
+        WHERE sensor_type = #{sensorType}
+    </update>
+
+    <update id="updateConsumableThreshold" parameterType="egovframework.example.sample.service.StockVO">
+        UPDATE consumable 
+        SET threshold = #{threshold}
+        WHERE type_key = #{typeKey}
+    </update>
+
 </mapper>

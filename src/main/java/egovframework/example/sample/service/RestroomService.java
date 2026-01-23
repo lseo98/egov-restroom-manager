@@ -2,6 +2,12 @@ package egovframework.example.sample.service;
 import java.util.Map;
 
 public interface RestroomService {
-    // 대시보드에 필요한 모든 데이터를 묶어서 가져오는 기능
+	// 1. 대시보드 데이터 조회
     Map<String, Object> getDashboardData() throws Exception;
+
+    // 2. 임계치 설정 페이지용 모든 데이터 로드
+    Map<String, Object> getThresholdSettings() throws Exception;
+
+    // 3. 임계치 설정 페이지에서 수정한 모든 설정값 저장
+    void updateThresholdSettings(Map<String, Object> data) throws Exception;
 }

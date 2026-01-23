@@ -76,6 +76,7 @@
 </head>
 
 <body class="page threshold-page">
+  <script> var contextPath = "${pageContext.request.contextPath}"; </script>
   <jsp:include page="/WEB-INF/jsp/common/header.jsp" />
   <jsp:include page="/WEB-INF/jsp/common/sidebar.jsp" />
 

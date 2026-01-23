@@ -2,8 +2,9 @@ package egovframework.example.sample.service;
 
 public class ThresholdVO {
     private String sensorType;  // 설정 대상 센서 (TEMP, HUMIDITY 등)
-    private double minValue;    // 최소 허용치
-    private double maxValue;    // 최대 허용치
+    private Double minValue;    // 최소 허용치
+    private Double maxValue;    // 최대 허용치
+    private String unit;
     private int alertInterval;  // 알림 반복 주기 (분)
 
     public String getSensorType() {
@@ -23,6 +24,12 @@ public class ThresholdVO {
     }
     public void setMaxValue(double maxValue) {
         this.maxValue = maxValue;
+    }
+    public String getUnit() { 
+    	return unit; 
+    } 
+    public void setUnit(String unit) {
+    	this.unit = unit; 
     }
     public int getAlertInterval() {
         return alertInterval;
