@@ -13,5 +13,5 @@ public interface RestroomService {
     void updateThresholdSettings(Map<String, Object> data) throws Exception;
     
  	// 센서 로그 데이터
-    List<SensorVO> getSensorLogs() throws Exception;
+    List<SensorVO> getSensorLogs(Map<String, Object> paramMap) throws Exception;
 }

@@ -129,7 +129,7 @@ public class RestroomServiceImpl implements RestroomService {
     }
 
     @Override
-    public List<SensorVO> getSensorLogs() throws Exception {
-        return mapper.selectSensorLogList();
+    public List<SensorVO> getSensorLogs(Map<String, Object> paramMap) throws Exception {
+        return mapper.selectSensorLogList(paramMap);
     }
 }

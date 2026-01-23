@@ -1,6 +1,7 @@
 package egovframework.example.sample.service.impl;
 
 import java.util.List;
+import java.util.Map;
 import egovframework.example.sample.service.*;
 import egovframework.rte.psl.dataaccess.mapper.Mapper;
 
@@ -14,7 +15,7 @@ public interface RestroomMapper {
     List<AlertSettingVO> selectAlertSettings() throws Exception;
     VisitorVO selectVisitComparison() throws Exception;
     
-    List<SensorVO> selectSensorLogList() throws Exception;
+    List<SensorVO> selectSensorLogList(Map<String, Object> paramMap) throws Exception;
     
     // 1. 임계치 및 알림 설정 조회용 메서드
     List<ThresholdVO> selectAllThresholds() throws Exception;
