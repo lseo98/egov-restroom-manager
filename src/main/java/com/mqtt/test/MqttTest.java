@@ -422,8 +422,8 @@ public class MqttTest {
         new Thread(() -> {
             while (true) {
                 try {
-                    // 15초마다 감소 로직 수행
-                    Thread.sleep(15000);
+                    // 1분마다 감소 로직 수행
+                    Thread.sleep(60000);
                     updateAndSaveLevel("LIQUID_SOAP");
                     updateAndSaveLevel("PAPER_TOWEL");
                 } catch (Exception e) {}

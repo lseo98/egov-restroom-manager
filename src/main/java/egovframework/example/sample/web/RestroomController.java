@@ -1,10 +1,12 @@
 package egovframework.example.sample.web;
 
 import java.util.Map;
+import java.util.HashMap;
 import javax.annotation.Resource;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody; 
 import egovframework.example.sample.service.RestroomService;
 
@@ -46,4 +48,29 @@ public class RestroomController {
     public String openAlarm(ModelMap model) throws Exception {
         return "restroom/alarm"; 
     }
+    // 6. 임계치 설정 데이터 로드 (JSON 반환)
+    @RequestMapping(value = "/threshold/getSettings.do")
+    @ResponseBody
+    public Map<String, Object> getThresholdSettings() {
+        try {
+            return restroomService.getThresholdSettings();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new HashMap<String, Object>(); 
+        }
+    }
+
+    @RequestMapping(value = "/threshold/saveSettings.do")
+        @ResponseBody
+        public Map<String, String> saveThresholdSettings(@RequestBody Map<String, Object> data) {
+            Map<String, String> result = new HashMap<>();
+            try {
+                restroomService.updateThresholdSettings(data);
+                result.put("status", "success");
+            } catch (Exception e) {
+                e.printStackTrace();
+                result.put("status", "fail");
+            }
+            return result;
+        }
 }
