@@ -102,3 +102,7 @@ INSERT INTO alert_setting (sensor_type) VALUES
 ('PAPER_TOWEL');
 
 ALTER TABLE sensor_reading ADD COLUMN status VARCHAR(20) DEFAULT 'normal';
+
+ALTER TABLE alert 
+ADD COLUMN severity ENUM('WARNING', 'CRITICAL') NOT NULL DEFAULT 'WARNING' 
+AFTER alert_type;

@@ -14,4 +14,7 @@ public interface RestroomService {
     
  	// 센서 로그 데이터
     List<SensorVO> getSensorLogs(Map<String, Object> paramMap) throws Exception;
+    
+    // 알림 내역 비즈니스 로직 추가
+    List<AlertVO> getAlertLogs(Map<String, Object> paramMap) throws Exception;
 }
