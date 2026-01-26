@@ -5,7 +5,7 @@ html,
 body.page.threshold-page {
     height: 100% !important;
     margin: 0 !important;
-    background: #FFFFFF !important;
+    background: #f6f7fb !important;
     color: #0F172A;
     font-family: "Noto Sans KR", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
     overflow: hidden;
@@ -34,7 +34,7 @@ body.page.threshold-page .content-area {
 
     display: flex;
     flex-direction: column;   /* 🔥 핵심 */
-    background: #FFFFFF !important;
+    background: #f6f7fb !important;
 }
 
 /* =========================================================
@@ -109,7 +109,7 @@ body.page.threshold-page .grid {
     gap: var(--gap);
     overflow: hidden;
     box-sizing: border-box;
-    background: #FFFFFF !important;
+    background: transparent !important;
 }
 
 /* ▶ 상단 : 하단 = 2 : 1  (≈ 6.6 : 3.3) */

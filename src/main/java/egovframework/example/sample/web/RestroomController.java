@@ -1,11 +1,11 @@
 package egovframework.example.sample.web;
 
 import java.util.HashMap;
-import egovframework.example.sample.service.AlertVO;
 import java.util.List;
 import java.util.Map;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpSession;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import egovframework.example.sample.service.AlertVO;
 import egovframework.example.sample.service.RestroomService;
 import egovframework.example.sample.service.SensorVO;
 
@@ -126,5 +127,34 @@ public class RestroomController {
             result.put("status", "fail");
         }
         return result;
+    }
+    
+    @RequestMapping(value = "/login.do")
+    public String openLogin() {
+        return "restroom/login"; 
+    }
+    
+    @RequestMapping(value = "/loginAction.do")
+    @ResponseBody
+    public String loginAction(@RequestParam Map<String, Object> param, HttpSession session) throws Exception {
+        
+        // 1. DB에서 사용자 성명 조회 (restroomService 호출)
+        String userName = restroomService.selectAdminLogin(param);
+        
+        if (userName != null) {
+            // 2. 로그인 성공: 세션에 사용자 정보 저장
+            session.setAttribute("userId", param.get("id"));
+            session.setAttribute("userName", userName);
+            return "success";
+        } else {
+            // 3. 로그인 실패
+            return "fail";
+        }
+    }
+    
+    @RequestMapping(value = "/logout.do")
+    public String logout(HttpSession session) {
+        session.invalidate(); // 세션의 모든 정보 삭제
+        return "redirect:/login.do"; // 로그인 페이지로 이동
     }
 }

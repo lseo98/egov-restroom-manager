@@ -138,4 +138,9 @@ public class RestroomServiceImpl implements RestroomService {
         // XML의 id인 selectAlertLogList와 연결됩니다.
         return mapper.selectAlertLogList(paramMap);
     }
+    
+    @Override
+    public String selectAdminLogin(Map<String, Object> param) throws Exception {
+        return mapper.selectAdminLogin(param); 
+    }
 }

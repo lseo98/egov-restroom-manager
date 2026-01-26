@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>임계치 설정</title>
+  <title>임계치 설정  - Smart Restroom</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Roboto+Mono&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -15,7 +15,7 @@
     html, body {
       margin: 0 !important; padding: 0 !important;
       height: 100% !important; overflow: hidden !important;
-      background: #F8FAFC !important; 
+      background: #f6f7fb !important;  /*배경색 변경 */
       font-family: 'Noto Sans KR', sans-serif;
     }
 
@@ -68,7 +68,7 @@
     #real-time-clock {
       min-width: 180px !important; display: inline-block !important;
       text-align: center !important; font-family: 'Roboto Mono', monospace !important;
-      background: rgba(255,255,255,0.15) !important; color: white !important;
+      background: rgba(255,255,255,0.15) !important;
       font-variant-numeric: tabular-nums; border-radius: 20px;
       padding: 4px 15px; margin-left: 20px; font-size: 14px; font-weight: 700;
     }
