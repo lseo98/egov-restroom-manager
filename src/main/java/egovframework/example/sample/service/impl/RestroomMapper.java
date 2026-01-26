@@ -27,4 +27,6 @@ public interface RestroomMapper {
     int updateConsumableThreshold(StockVO stockVO) throws Exception;
     
     List<AlertVO> selectAlertLogList(Map<String, Object> paramMap) throws Exception;
+    
+    String selectAdminLogin(Map<String, Object> param) throws Exception;
 }
