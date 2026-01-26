@@ -68,7 +68,7 @@
     #real-time-clock {
       min-width: 180px !important; display: inline-block !important;
       text-align: center !important; font-family: 'Roboto Mono', monospace !important;
-      background: rgba(255,255,255,0.15) !important; color: white !important;
+      background: rgba(255,255,255,0.15) !important;
       font-variant-numeric: tabular-nums; border-radius: 20px;
       padding: 4px 15px; margin-left: 20px; font-size: 14px; font-weight: 700;
     }
