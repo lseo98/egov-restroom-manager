@@ -132,4 +132,10 @@ public class RestroomServiceImpl implements RestroomService {
     public List<SensorVO> getSensorLogs(Map<String, Object> paramMap) throws Exception {
         return mapper.selectSensorLogList(paramMap);
     }
+    
+    @Override
+    public List<AlertVO> getAlertLogs(Map<String, Object> paramMap) throws Exception {
+        // XML의 id인 selectAlertLogList와 연결됩니다.
+        return mapper.selectAlertLogList(paramMap);
+    }
 }

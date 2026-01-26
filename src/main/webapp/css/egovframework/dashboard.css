@@ -76,7 +76,7 @@ html, body {
 
 .status-item .label { font-size: 12px; color: #64748b; font-weight: 700; display: block; }
 .status-item .value { font-size: 1.3rem; font-weight: 900; transition: all 0.3s; }
-.val-temp { color: #ef4444; }
+.val-temp { color: #FF6B6B; }
 .val-hum { color: #0ea5e9; }
 .val-odor { color: #22c55e; }
 .status-icon { font-size: 28px !important; margin-bottom: 2px; }

@@ -25,4 +25,6 @@ public interface RestroomMapper {
     int updateSensorThreshold(ThresholdVO thresholdVO) throws Exception;
     int updateAlertSetting(AlertSettingVO alertSettingVO) throws Exception;
     int updateConsumableThreshold(StockVO stockVO) throws Exception;
+    
+    List<AlertVO> selectAlertLogList(Map<String, Object> paramMap) throws Exception;
 }

@@ -1,6 +1,7 @@
 package egovframework.example.sample.web;
 
 import java.util.HashMap;
+import egovframework.example.sample.service.AlertVO;
 import java.util.List;
 import java.util.Map;
 
@@ -96,6 +97,32 @@ public class RestroomController {
             result.put("status", "success");
             result.put("logs", logs);
         } catch (Exception e) {
+            result.put("status", "fail");
+        }
+        return result;
+    }
+    /**
+     * 알림 이력 데이터를 JSON 형태로 반환합니다.
+     */
+    @RequestMapping(value = "/getAlertLogs.do")
+    @ResponseBody
+    public Map<String, Object> getAlertLogs(
+            @RequestParam(value="startDate", required=false) String startDate,
+            @RequestParam(value="endDate", required=false) String endDate) throws Exception {
+        
+        // 2. 검색 날짜를 Map에 담아 서비스로 전달
+        Map<String, Object> paramMap = new HashMap<>();
+        paramMap.put("startDate", startDate);
+        paramMap.put("endDate", endDate);
+
+        Map<String, Object> result = new HashMap<>();
+        try {
+            // 3. 서비스 호출 (알림 이력 전용 메서드)
+            List<AlertVO> logs = restroomService.getAlertLogs(paramMap);
+            result.put("status", "success");
+            result.put("logs", logs);
+        } catch (Exception e) {
+            e.printStackTrace();
             result.put("status", "fail");
         }
         return result;

@@ -49,7 +49,7 @@
                     <div class="title">화장실 운영 상태</div>
                     <div class="status-grid">
                         <div class="status-item" id="tempBox">
-                            <span class="material-icons status-icon" style="color:#ef4444;">thermostat</span>
+                            <span class="material-icons status-icon" style="color:#FF6B6B;">thermostat</span>
                             <span class="label">온도</span>
                             <div class="value val-temp">${data.temp.value}°C</div>
                         </div>
@@ -260,12 +260,12 @@
                     if (data.diffPercent !== undefined) {
                         var tb = document.getElementById('trendBox'), ti = document.getElementById('trendIcon'), pv = document.getElementById('percentVal');
                         if (data.diffPercent === "-") {
-                            pv.textContent = "- %"; tb.style.color = "#64748b"; ti.textContent = "trending_flat";
+                            pv.textContent = "- %"; tb.style.color = "#64748b"; ti.textContent = "";
                         } else {
                             var d = parseFloat(data.diffPercent); pv.textContent = Math.abs(d).toFixed(1) + " %";
                             if (d > 0) { tb.style.color = "#4ade80"; ti.textContent = "trending_up"; }
                             else if (d < 0) { tb.style.color = "#ef4444"; ti.textContent = "trending_down"; }
-                            else { tb.style.color = "#64748b"; ti.textContent = "trending_flat"; }
+                            else { tb.style.color = "#64748b"; ti.textContent = ""; }
                         }
                     }
                 });
