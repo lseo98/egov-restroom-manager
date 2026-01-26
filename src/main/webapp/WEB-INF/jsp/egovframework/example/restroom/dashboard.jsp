@@ -49,7 +49,7 @@
                     <div class="title">화장실 운영 상태</div>
                     <div class="status-grid">
                         <div class="status-item" id="tempBox">
-                            <span class="material-icons status-icon" style="color:#ef4444;">thermostat</span>
+                            <span class="material-icons status-icon" style="color:#FF6B6B;">thermostat</span>
                             <span class="label">온도</span>
                             <div class="value val-temp">${data.temp.value}°C</div>
                         </div>
