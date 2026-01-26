@@ -5,11 +5,12 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>알림  - Smart Restroom</title>
+    <title>알림 - Smart Restroom</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="<c:url value='/css/egovframework/dashboard.css'/>">
-    <link rel="stylesheet" href="<c:url value='/css/egovframework/alert.css?v=1.2'/>">
+    <link rel="stylesheet" href="<c:url value='/css/egovframework/alert.css?v=1.7'/>">
 </head>
 <body>
     <jsp:include page="/WEB-INF/jsp/common/header.jsp" />
@@ -21,9 +22,9 @@
             <div class="alert-page">
                 <div class="alert-header-row">
                     <div class="alert-title">알림</div>
-                    <button type="button" class="btn-refresh" onclick="Alerts.fetchAlerts();">
-                        <span class="material-icons">refresh</span> Refresh
-                    </button>
+                    <button type="button" class="btn-excel" onclick="downloadAlertCSV();">
+				        <span class="material-icons">file_download</span> CSV Download
+				    </button>
                 </div>
 
                 <div class="alert-filter">
@@ -56,13 +57,7 @@
 
                 <div class="alert-card">
                     <table class="alert-table board">
-                        <colgroup>
-                            <col style="width:150px;">
-                            <col style="width:250px;">
-                            <col>
-                            <!-- ✅ Created At 컬럼 너비만 증가 (200 → 240) -->
-                            <col style="width:240px;">
-                        </colgroup>
+
                         <thead>
                             <tr>
                                 <th>Alert Type</th>
@@ -74,7 +69,7 @@
                         </thead>
                         <tbody id="alertBody">
                             <tr>
-                                <td colspan="4" style="text-align:center; padding:50px;">데이터를 불러오는 중입니다...</td>
+                                <td colspan="5" style="text-align:center; padding:50px;">데이터를 불러오는 중입니다...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -95,7 +90,57 @@
         </div>
     </div>
 
-    <script>var contextPath = "${pageContext.request.contextPath}";</script>
-    <script src="<c:url value='/js/alert.js'/>"></script>
+    <script>
+	    var contextPath = "${pageContext.request.contextPath}";
+	
+	    // ✅ 알림 페이지 CSV 다운로드 (data 페이지 방식 그대로)
+	    function downloadAlertCSV() {
+	        // Alerts 객체/함수 존재 확인
+	        if (typeof Alerts === 'undefined' || typeof Alerts.getFilteredAlerts !== 'function') {
+	            alert("알림 로직을 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
+	            return;
+	        }
+	
+	        // ✅ 화면 10개가 아니라, 필터링된 '전체' 리스트를 CSV로 저장
+	        const allAlerts = Alerts.getFilteredAlerts();
+	
+	        if (!allAlerts || allAlerts.length === 0) {
+	            alert("다운로드할 데이터가 없습니다. 먼저 [조회하기]를 눌러주세요.");
+	            return;
+	        }
+	
+	        let csv = [];
+	        // CSV 헤더
+	        csv.push(['"Alert Type"', '"Title"', '"Message"', '"Value"', '"Created At"'].join(","));
+	
+	        allAlerts.forEach(a => {
+	            const row = [
+	                '"' + (a.alertType || '-') + '"',
+	                '"' + (a.title || '-') + '"',
+	                '"' + String(a.message || '-').replace(/"/g, '""') + '"', // 따옴표 이스케이프
+	                '"' + (a.value || '-') + '"',
+	                '"\'' + (a.createdAt || '-') + '"' // 엑셀 날짜 깨짐 방지 (')
+	            ];
+	            csv.push(row.join(","));
+	        });
+	
+	        // BOM(한글 깨짐 방지) + 다운로드
+	        const csvContent = "\uFEFF" + csv.join("\n");
+	        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+	        const url = URL.createObjectURL(blob);
+	
+	        const link = document.createElement("a");
+	        const today = new Date().toISOString().slice(0, 10);
+	        link.setAttribute("href", url);
+	        link.setAttribute("download", "SmartRestroom_Alerts_" + today + ".csv");
+	
+	        document.body.appendChild(link);
+	        link.click();
+	        document.body.removeChild(link);
+	    }
+	</script>
+	
+	<script src="<c:url value='/js/alert.js'/>"></script>
+
 </body>
 </html>
