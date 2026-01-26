@@ -218,7 +218,7 @@ public class MqttTest {
                     // 이상 수치 발견 시 알림 주기(dynamicIntervalMs)에 맞춰 알림 생성
                     if (!status.equals("normal")) {
                         long dynamicIntervalMs = intervalMin * 60 * 1000L;
-                        checkAndCreateAlert(alertType, alertTitle, "현재값: " + value, dynamicIntervalMs);
+                        checkAndCreateAlert(alertType, status, alertTitle, "현재값: " + value, dynamicIntervalMs);
                     }
                 }
             }
@@ -268,7 +268,7 @@ public class MqttTest {
                 if (rsD.next()) {
                     int count = rsD.getInt("daily_count");
                     if (count > 0 && count % 10 == 0) {
-                        createAlert("PEOPLE_OVER", "이용객 누적 알림", "오늘 누적 " + count + "명 돌파");
+                    	createAlert("PEOPLE_OVER", "warning", "이용객 누적 알림", "오늘 누적 " + count + "명 돌파");
                     }
                 }
             }
@@ -318,7 +318,7 @@ public class MqttTest {
                     saveToDb(0, typeKey, (double)nextLevel, status);
 
                     if (status.equals("warning")) {
-                        createAlert("CONSUMABLE_LOW", typeKey + " 잔량 부족", "현재 잔량: " + nextLevel + "%");
+                    	createAlert("CONSUMABLE_LOW", status, typeKey + " 잔량 부족", "현재 잔량: " + nextLevel + "%");
                     }
                 }
             }
@@ -363,7 +363,7 @@ public class MqttTest {
     /**
      * 알림 데이터 생성 (설정 테이블의 On/Off 여부 확인 포함)
      */
-    private static void createAlert(String type, String title, String msg) {
+    private static void createAlert(String type, String severity, String title, String msg) {
         String sensorType = "";
         // 알림 타입을 기반으로 설정 테이블 조회용 키 매핑
         if (type.contains("TEMP")) sensorType = "TEMP";
@@ -375,13 +375,14 @@ public class MqttTest {
         // 사용자가 설정을 껐을 경우 알림 생성 중단
         if (!isAlertEnabled(sensorType)) return;
         
-        String sql = "INSERT INTO alert (alert_type, title, message) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO alert (alert_type, severity, title, message) VALUES (?, ?, ?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, type);
-            pstmt.setString(2, title);
-            pstmt.setString(3, msg);
+            pstmt.setString(2, severity.toUpperCase()); // WARNING 또는 CRITICAL 저장
+            pstmt.setString(3, title);
+            pstmt.setString(4, msg);
             pstmt.executeUpdate();
-            System.out.println(">>> [알림 생성] " + title + " (" + type + ")");
+            System.out.println(">>> [알림 생성] " + title + " [" + severity + "]");
         } catch (Exception e) {
             System.out.println(">>> [알림 저장 에러] " + e.getMessage());
         }
@@ -404,13 +405,13 @@ public class MqttTest {
     /**
      * 중복 알림 방지를 위한 발송 주기 체크 후 알림 생성
      */
-    private static void checkAndCreateAlert(String type, String title, String msg, long dynamicInterval) {
+    private static void checkAndCreateAlert(String type, String severity, String title, String msg, long dynamicInterval) {
         long currentTime = System.currentTimeMillis();
         long lastTime = lastAlertTimeMap.getOrDefault(type, 0L);
         
         // 지정된 간격이 경과했을 때만 알림 발생
         if (currentTime - lastTime > dynamicInterval) {
-            createAlert(type, title, msg);
+        	createAlert(type, severity, title, msg);
             lastAlertTimeMap.put(type, currentTime); 
         }
     }

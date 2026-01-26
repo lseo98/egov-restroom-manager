@@ -116,5 +116,26 @@
 	    ORDER BY measured_at DESC 
 	    LIMIT 100000
 	</select>
-
+	
+	<select id="selectAlertLogList" parameterType="map" resultType="egovframework.example.sample.service.AlertVO">
+        SELECT 
+            alert_id AS alertId,
+            alert_type AS alertType,
+            severity, title,
+            message,
+            created_at AS createdAt
+        FROM alert
+        WHERE 1=1
+        
+        <if test="startDate != null and startDate != ''">
+            AND created_at &gt;= CONCAT(#{startDate}, ' 00:00:00')
+        </if>
+        
+        <if test="endDate != null and endDate != ''">
+            AND created_at &lt;= CONCAT(#{endDate}, ' 23:59:59')
+        </if>
+        
+        ORDER BY created_at DESC 
+        LIMIT 10000
+    </select>
 </mapper>
