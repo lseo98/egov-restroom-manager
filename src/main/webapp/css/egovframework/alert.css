@@ -352,3 +352,23 @@
   font-size:13px;
   line-height:1.5;
 }
+
+.badge {
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 900;
+    color: white; /* 글자색 흰색으로 고정 */
+    display: inline-block;
+    text-transform: uppercase;
+}
+
+/* WARNING: 주황색 (#f59e0b) */
+.badge-warning { 
+    background-color: #f59e0b; 
+}
+
+/* CRITICAL: 빨간색 (#ef4444) */
+.badge-critical { 
+    background-color: #ef4444; 
+}

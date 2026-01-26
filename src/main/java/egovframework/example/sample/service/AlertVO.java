@@ -4,8 +4,8 @@ public class AlertVO {
     private int alertId;      // 알림 고유 번호
     private String alertType; // 알림 종류
     private String severity;  // WARNING 또는 CRITICAL
-    private String title;     // 알림 제목
-    private String message;   // 알림 상세 내용
+    private String content;   // 알림 내용
+    private String value;     // 알림 수치/메시지 
     private String createdAt; // 발생 시각
 
     public int getAlertId() {
@@ -21,22 +21,22 @@ public class AlertVO {
         this.alertType = alertType;
     }
     public String getSeverity() { 
-    	return severity; 
+        return severity; 
     }
     public void setSeverity(String severity) {
-    	this.severity = severity; 
+        this.severity = severity; 
     }
-    public String getTitle() {
-        return title;
+    public String getContent() {
+        return content;
     }
-    public void setTitle(String title) {
-        this.title = title;
+    public void setContent(String content) {
+        this.content = content;
     }
-    public String getMessage() {
-        return message;
+    public String getValue() {
+        return value;
     }
-    public void setMessage(String message) {
-        this.message = message;
+    public void setValue(String value) {
+        this.value = value;
     }
     public String getCreatedAt() {
         return createdAt;

@@ -58,9 +58,9 @@ CREATE TABLE sensor_reading (
 -- 9. 알림 (alert) 테이블 생성
 CREATE TABLE alert (
     alert_id INT AUTO_INCREMENT PRIMARY KEY,
-    alert_type ENUM('PEOPLE_OVER', 'CONSUMABLE_LOW', 'STINK_HIGH', 'TEMP_ABNORMAL', 'HUMIDITY_ABNORMAL') NOT NULL,
-    title VARCHAR(100) NOT NULL,
-    message TEXT,
+    alert_type VARCHAR(50) NOT NULL,
+    content VARCHAR(50) NOT NULL,
+    value VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
