@@ -106,3 +106,13 @@ ALTER TABLE sensor_reading ADD COLUMN status VARCHAR(20) DEFAULT 'normal';
 ALTER TABLE alert 
 ADD COLUMN severity ENUM('WARNING', 'CRITICAL') NOT NULL DEFAULT 'WARNING' 
 AFTER alert_type;
+
+CREATE TABLE admin_user (
+    user_id VARCHAR(20) PRIMARY KEY, -- 아이디
+    user_pw VARCHAR(100) NOT NULL,   -- 비밀번호
+    user_name VARCHAR(20)            -- 이름
+);
+
+-- 테스트용 데이터 삽입
+INSERT INTO admin_user (user_id, user_pw, user_name) 
+VALUES ('admin', '1234', '관리자');
