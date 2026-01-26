@@ -22,3 +22,25 @@
     </div>
   </div>
 </header>
+
+<script>
+(function() {
+    function updateHeaderClock() {
+        const el = document.getElementById('real-time-clock');
+        if (!el) return;
+
+        const now = new Date();
+        const fmt = now.getFullYear() + '-' + 
+                    String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                    String(now.getDate()).padStart(2, '0') + ' ' + 
+                    String(now.getHours()).padStart(2, '0') + ':' + 
+                    String(now.getMinutes()).padStart(2, '0');
+        
+        if (el.textContent !== fmt) {
+            el.textContent = fmt;
+        }
+    }
+    updateHeaderClock(); 
+    setInterval(updateHeaderClock, 1000);
+})();
+</script>

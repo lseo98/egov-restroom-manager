@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="<c:url value='/css/egovframework/dashboard.css'/>">
     <link rel="stylesheet" href="<c:url value='/css/egovframework/data.css?v=1.8'/>">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet">
 </head>
 <body>
     <jsp:include page="/WEB-INF/jsp/common/header.jsp" />
@@ -19,8 +20,8 @@
             <div class="data-page">
                 <div class="data-header-row">
                     <div class="data-title">Raw Data Log</div>
-                    <button type="button" class="btn-excel" onclick="alert('Excel 다운로드 기능을 준비 중입니다.');">
-                        <span class="material-icons">file_download</span> Excel Download
+                    <button type="button" class="btn-excel" onclick="downloadCSV();">
+                        <span class="material-icons">file_download</span> CSV Download
                     </button>
                 </div>
 
@@ -68,6 +69,57 @@
 
     <script>
         var contextPath = "${pageContext.request.contextPath}";
+
+        // ✅ 필터링된 "전체 페이지 데이터"를 CSV로 저장하는 함수
+        function downloadCSV() {
+            // 1. DataLog 객체가 존재하는지, getFilteredLogs 함수가 있는지 확인
+            if (typeof DataLog === 'undefined' || typeof DataLog.getFilteredLogs !== 'function') {
+                alert("데이터 로직을 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
+                return;
+            }
+
+            // 2. data.js에서 관리하는 필터링된 전체 리스트 가져오기
+            const allLogs = DataLog.getFilteredLogs();
+
+            if (!allLogs || allLogs.length === 0) {
+                alert("다운로드할 데이터가 없습니다. 먼저 [조회하기]를 눌러주세요.");
+                return;
+            }
+
+            let csv = [];
+            // CSV 헤더 추가
+            csv.push(['"Time"', '"Sensor Type"', '"Location"', '"Value"', '"Status"'].join(","));
+
+            // 3. 전체 데이터 반복 (화면에 보이는 10개가 아닌 전체를 대상으로 함)
+            allLogs.forEach(log => {
+                const locationText = (log.stallId !== null && log.stallId !== undefined) 
+                                     ? log.stallId + "번 칸" 
+                                     : "-";
+                
+                let row = [
+                    '"\'' + (log.readingTime || '-') + '"', // 엑셀 시간 깨짐 방지 (')
+                    '"' + (log.sensorType || '-') + '"',
+                    '"' + locationText + '"',
+                    '"' + (log.value || '0') + '"',
+                    '"' + (log.status || 'Normal') + '"'
+                ];
+                csv.push(row.join(","));
+            });
+
+            // 4. BOM(한글 깨짐 방지) 및 다운로드 실행
+            const csvContent = "\uFEFF" + csv.join("\n");
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement("a");
+            const today = new Date().toISOString().slice(0, 10);
+            
+            link.setAttribute("href", url);
+            link.setAttribute("download", "SmartRestroom_Log_" + today + ".csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
     </script>
     
     <script src="<c:url value='/js/data.js'/>"></script>

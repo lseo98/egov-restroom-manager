@@ -51,9 +51,9 @@ public class RestroomController {
     }
 
     // 5. 알림 이력 화면
-    @RequestMapping(value = "/alarm.do")
+    @RequestMapping(value = "/alert.do")
     public String openAlarm(ModelMap model) throws Exception {
-        return "restroom/alarm"; 
+        return "restroom/alert"; 
     }
     // 6. 임계치 설정 데이터 로드 (JSON 반환)
     @RequestMapping(value = "/threshold/getSettings.do")
