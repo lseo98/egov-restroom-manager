@@ -17,4 +17,6 @@ public interface RestroomService {
     
     // 알림 내역 비즈니스 로직 추가
     List<AlertVO> getAlertLogs(Map<String, Object> paramMap) throws Exception;
+    
+    String selectAdminLogin(Map<String, Object> param) throws Exception;
 }
