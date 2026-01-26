@@ -3,7 +3,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Login</title>
+    <title>Admin Login - Smart Restroom</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
@@ -11,7 +11,7 @@
             margin: 0; padding: 0;
             height: 100%; width: 100%;
             font-family: 'Noto Sans KR', sans-serif;
-            background-color: #17215E; 
+            background-color: #f4f7f9; 
             overflow: hidden;
         }
 
@@ -23,49 +23,62 @@
 
         .login-header {
             display: flex; align-items: center;
-            gap: 10px; margin-bottom: 25px; color: #ffffff;
+            gap: 12px; margin-bottom: 30px;
+            color: #17215E; 
         }
 
-        .login-header .material-icons { font-size: 32px; }
+        .login-header .material-icons { font-size: 40px; }
 
         .login-header h1 {
-            margin: 0; font-size: 24px;
+            margin: 0; font-size: 28px; 
             font-weight: 900; letter-spacing: -0.5px;
         }
 
         .login-card {
-            width: 340px; padding: 40px 30px;
-            background: #ffffff; border-radius: 16px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            width: 400px; 
+            padding: 50px 40px; 
+            background: #ffffff; 
+            border-radius: 20px; 
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
             text-align: center;
         }
 
         .login-card h2 {
-            margin-bottom: 25px; font-weight: 900;
-            color: #17215E; font-size: 17px;
-            letter-spacing: 0.5px; opacity: 0.8;
+            margin-bottom: 30px; font-weight: 900;
+            color: #17215E; font-size: 20px; 
+            letter-spacing: 0.5px; opacity: 0.9;
         }
 
-        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group { margin-bottom: 20px; text-align: left;  }
         .input-group label { 
-            display: block; margin-bottom: 6px; 
-            font-size: 11.5px; font-weight: 700; color: #64748B; 
+            display: block; margin-bottom: 8px; 
+            font-size: 14px; 
+            font-weight: 700; color: #64748B; 
         }
 
         .input-group input {
-            width: 100%; padding: 11px 13px;
-            border: 1.5px solid #E2E8F0; border-radius: 8px;
-            box-sizing: border-box; font-size: 13.5px;
+            width: 100%; padding: 14px 16px; 
+            border: 2px solid #E2E8F0; 
+            border-radius: 10px;
+            box-sizing: border-box; font-size: 16px; 
             transition: border-color 0.2s;
+            background-color: #fdfdfd;
         }
-        .input-group input:focus { outline: none; border-color: #4D96FF; }
+        .input-group input:focus { 
+            outline: none; 
+            border-color: #4D96FF; 
+            background-color: #fff;
+        }
 
         .btn-login {
-            width: 100%; padding: 13px; margin-top: 15px;
+            width: 100%; padding: 16px; 
+            margin-top: 20px; 
             background: #17215E; color: #fff;
-            border: none; border-radius: 8px;
-            font-size: 14.5px; font-weight: 900;
+            border: none; border-radius: 10px;
+            font-size: 18px; 
+            font-weight: 900;
             cursor: pointer; transition: background 0.2s;
+            box-shadow: 0 4px 12px rgba(23, 33, 94, 0.2);
         }
         .btn-login:hover { background: #25338d; }
     </style>
@@ -108,7 +121,6 @@
             return;
         }
 
-        // DB 쿼리의 파라미터 키값(id, pw)과 일치시킴
         const url = contextPath + '/loginAction.do?id=' + encodeURIComponent(idValue) + '&pw=' + encodeURIComponent(pwValue);
 
         fetch(url)
