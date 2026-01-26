@@ -70,33 +70,34 @@
     <script>
         var contextPath = "${pageContext.request.contextPath}";
 
-        // ✅ 화면에 보이는 10개가 아닌, 필터링된 "전체 데이터"를 CSV로 저장하는 함수
+        // ✅ 필터링된 "전체 페이지 데이터"를 CSV로 저장하는 함수
         function downloadCSV() {
-            // data.js 내부에 캡슐화되어 있을 수 있으므로 filteredLogs에 접근 시도
-            // 만약 undefined라면 data.js 구조에 맞게 로직 구성
-            if (typeof filteredLogs === 'undefined') {
-                // 이 영역은 data.js 외부에서 filteredLogs에 접근하지 못할 경우를 대비한 안전장치입니다.
-                alert("데이터 로딩 중입니다. 잠시 후 다시 시도해주세요.");
+            // 1. DataLog 객체가 존재하는지, getFilteredLogs 함수가 있는지 확인
+            if (typeof DataLog === 'undefined' || typeof DataLog.getFilteredLogs !== 'function') {
+                alert("데이터 로직을 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
                 return;
             }
 
-            if (filteredLogs.length === 0) {
-                alert("다운로드할 데이터가 없습니다.");
+            // 2. data.js에서 관리하는 필터링된 전체 리스트 가져오기
+            const allLogs = DataLog.getFilteredLogs();
+
+            if (!allLogs || allLogs.length === 0) {
+                alert("다운로드할 데이터가 없습니다. 먼저 [조회하기]를 눌러주세요.");
                 return;
             }
 
             let csv = [];
-            // 헤더 추가
+            // CSV 헤더 추가
             csv.push(['"Time"', '"Sensor Type"', '"Location"', '"Value"', '"Status"'].join(","));
 
-            // 전체 데이터 반복
-            filteredLogs.forEach(log => {
+            // 3. 전체 데이터 반복 (화면에 보이는 10개가 아닌 전체를 대상으로 함)
+            allLogs.forEach(log => {
                 const locationText = (log.stallId !== null && log.stallId !== undefined) 
                                      ? log.stallId + "번 칸" 
                                      : "-";
                 
                 let row = [
-                    '"\'' + (log.readingTime || '-') + '"', // 엑셀 #### 방지
+                    '"\'' + (log.readingTime || '-') + '"', // 엑셀 시간 깨짐 방지 (')
                     '"' + (log.sensorType || '-') + '"',
                     '"' + locationText + '"',
                     '"' + (log.value || '0') + '"',
@@ -105,15 +106,19 @@
                 csv.push(row.join(","));
             });
 
+            // 4. BOM(한글 깨짐 방지) 및 다운로드 실행
             const csvContent = "\uFEFF" + csv.join("\n");
             const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
             const url = URL.createObjectURL(blob);
+            
             const link = document.createElement("a");
             const today = new Date().toISOString().slice(0, 10);
             
             link.setAttribute("href", url);
-            link.setAttribute("download", "Restroom_All_Data_" + today + ".csv");
+            link.setAttribute("download", "SmartRestroom_Log_" + today + ".csv");
+            document.body.appendChild(link);
             link.click();
+            document.body.removeChild(link);
         }
     </script>
     
