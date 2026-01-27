@@ -172,7 +172,7 @@
   border-bottom:1px solid #f1f5f9;
   color:#334155;
   font-size:13px;
-  font-weight:400;
+  font-weight:300;
   background:#fff;
 }
 
@@ -190,7 +190,6 @@
 .alert-table td:nth-child(4){
   width:12%;
   text-align:center;
-  font-weight:700;
 }
 
 .alert-table th:nth-child(5),
@@ -206,7 +205,7 @@
 
 /* 제목/메시지 */
 .board-title{
-  font-weight:700;
+  font-weight:300;
   color:#0f172a;
   overflow:hidden;
   text-overflow:ellipsis;
@@ -335,29 +334,50 @@
 
 .modal-body{ padding:20px; }
 
-.kv{
-  display:grid;
-  grid-template-columns:100px 1fr;
-  gap:12px;
+/* 모달 카드 스타일 (하늘색 테두리 박스) */
+.kv-container {
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: #fff;
 }
 
-.kv .k{
-  font-weight:800;
-  color:#64748b;
-  font-size:13px;
+/* Key-Value 정렬을 위한 그리드 */
+.kv {
+    display: grid;
+    /* 왼쪽 라벨은 100px 고정 및 우측 정렬, 오른쪽 값은 남은 공간 차지 */
+    grid-template-columns: 100px 1fr;
+    gap: 16px 24px;
+    align-items: center;
 }
 
-.kv .v{
-  color:#1e293b;
-  font-size:13px;
-  line-height:1.5;
+/* 라벨 스타일 (회색, 오른쪽 정렬) */
+.kv .k {
+    color: #64748b;
+    font-weight: 800;
+    font-size: 13px;
+    text-align: left;
 }
+
+/* 데이터 값 스타일 (검정색, 굵게, 왼쪽 정렬) */
+.kv .v {
+    color: #0f172a;
+    font-weight: 500;
+    font-size: 14px;
+    text-align: left; /* ✅ 값 좌측 정렬 */
+}
+
+/* 현재 수치 강조 색상 */
+.v-highlight {
+    color: #ef4444 !important;
+}
+
 
 .badge {
     padding: 3px 10px;
     border-radius: 4px;
     font-size: 10px;
-    font-weight: 900;
+    font-weight: 500;
     color: white; /* 글자색 흰색으로 고정 */
     display: inline-block;
     text-transform: uppercase;

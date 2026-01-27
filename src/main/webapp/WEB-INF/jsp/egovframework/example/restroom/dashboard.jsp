@@ -122,17 +122,96 @@
         var thresholdMap = null;
 
 
-        function initChart(labels, values) {
+        function initChart(labels, todayValues, yesterdayValues) {
             var dom = document.getElementById('chartCanvas');
             if (!dom) return;
             if (occChart) occChart.dispose();
+            
             occChart = echarts.init(dom);
             occChart.setOption({
-                grid: { left: 34, right: 18, top: 18, bottom: 28 },
-                tooltip: { trigger: 'axis' },
-                xAxis: { type: 'category', data: labels, boundaryGap: false, axisLine: { lineStyle: { color: '#e2e8f0' } }, axisLabel: { color: '#64748b', fontWeight: 700 } },
-                yAxis: { type: 'value', axisLabel: { color: '#64748b', fontWeight: 700 }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
-                series: [{ name: '이용자', type: 'line', data: values, smooth: true, areaStyle: { opacity: 0.12 } }]
+                grid: { left: '4%', right: '4%', top: '18%', bottom: '8%', containLabel: true },
+                tooltip: { 
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                    borderRadius: 8,
+                    padding: 12,
+                    borderColor: '#e2e8f0',
+                    textStyle: { color: '#334155', fontSize: 13 },
+                    shadowBlur: 10,
+                    shadowColor: 'rgba(0,0,0,0.05)',
+                    // 툴팁 레이아웃 수정 (빨간줄 방지를 위해 문자열 결합 방식 사용)
+                    formatter: function(params) {
+                        var res = '<div style="font-weight:bold; color:#1e293b; margin-bottom:8px; border-bottom:1px solid #f1f5f9; padding-bottom:4px;">' + params[0].name + ' 이용 현황</div>';
+                        params.forEach(function(item) {
+                            var color = item.color;
+                            var isToday = item.seriesName === '오늘';
+                            var valColor = isToday ? '#454f80' : '#94a3b8';
+                            
+                            res += '<div style="display:flex; justify-content:space-between; align-items:center; gap:20px; margin: 4px 0;">' +
+                                       '<span style="display:flex; align-items:center; color:#64748b;">' +
+                                           '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:' + color + '; margin-right:8px;"></span>' +
+                                           item.seriesName +
+                                       '</span>' +
+                                       '<span style="font-weight:bold; color:' + valColor + ';">' +
+                                           item.value + ' <small style="font-weight:normal;">명</small>' +
+                                       '</span>' +
+                                   '</div>';
+                        });
+                        return res;
+                    }
+                },
+                legend: {
+                    data: ['오늘', '어제'],
+                    right: '5%',
+                    top: '0',
+                    icon: 'roundRect',
+                    itemWidth: 15,
+                    itemHeight: 10,
+                    itemGap: 20,
+                    textStyle: { color: '#64748b', fontWeight: 600, fontSize: 13 }
+                },
+                xAxis: { 
+                    type: 'category', 
+                    data: labels, 
+                    boundaryGap: false, 
+                    axisLine: { lineStyle: { color: '#e2e8f0' } }, 
+                    axisLabel: { color: '#94a3b8', fontWeight: 600, margin: 15 } 
+                },
+                yAxis: { 
+                    type: 'value', 
+                    splitLine: { lineStyle: { color: '#f1f5f9' } },
+                    axisLabel: { color: '#94a3b8', fontWeight: 600 } 
+                },
+                series: [
+                    { 
+                        name: '오늘', 
+                        type: 'line', 
+                        data: todayValues, 
+                        smooth: 0.45,
+                        symbol: 'circle',
+                        symbolSize: 6,
+                        showSymbol: false,
+                        itemStyle: { color: '#454f80' }, 
+                        lineStyle: { width: 3, cap: 'round' },
+                        areaStyle: { 
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: 'rgba(79, 70, 229, 0.15)' },
+                                { offset: 1, color: 'rgba(79, 70, 229, 0)' }
+                            ]) 
+                        },
+                        emphasis: { showSymbol: true, itemStyle: { borderWidth: 2, borderColor: '#fff' } }
+                    },
+                    { 
+                        name: '어제', 
+                        type: 'line', 
+                        data: yesterdayValues, 
+                        smooth: 0.45,
+                        symbol: 'none',
+                        itemStyle: { color: '#cbd5e1' },
+                        lineStyle: { width: 2, type: 'dashed', dashOffset: 5 },
+                        emphasis: { lineStyle: { width: 2, color: '#94a3b8' } }
+                    }
+                ]
             });
         }
 
@@ -262,11 +341,17 @@
         }
 
         window.onload = function() {
-            var hL = [], hV = [];
+        	var hL = [], hV_today = [], hV_yesterday = [];
+
             <c:forEach var="h" items="${data.hourlyStats}">
-                hL.push("${h.hourId}시"); hV.push(${h.visitCount});
+                hL.push("${h.hourId}시"); 
+                // DB 컬럼명에 맞춰 오늘(visitCount)과 어제(yesterdayCount) 추출
+                hV_today.push(${h.visitCount});
+                hV_yesterday.push(${h.yesterdayCount});
             </c:forEach>
-            initChart(hL, hV);
+
+            initChart(hL, hV_today, hV_yesterday);
+            
             updateRealTime();
             setInterval(updateRealTime, 3000);
             window.addEventListener('resize', function(){

@@ -125,26 +125,40 @@
         nav.innerHTML = html;
     }
 
-    function openModal(item) {
-        const modalBody = document.getElementById('modalBody');
-        if (!modalBody) return;
-
-        const sevClass = (item.severity === 'CRITICAL') ? 'badge-critical' : 'badge-warning';
-        const typeClass = "type-" + String(item.alertType).toLowerCase();
-
-        modalBody.innerHTML = 
-            '<div style="line-height:2.2; font-size:14px;">' +
-            '    <b>알림 타입:</b> <span class="type-pill ' + typeClass + '">' + item.alertType + '</span><br>' +
-            '    <b>심각도:</b> <span class="badge ' + sevClass + '">' + item.severity + '</span><br>' +
-            '    <b>내용:</b> ' + (item.content || '-') + '<br>' +
-            '    <b>현재 수치:</b> <span style="color:#b91c1c; font-weight:bold;">' + (item.value || '-') + '</span><br>' +
-            '    <b>발생 시간:</b> ' + item.createdAt +
-            '</div>';
-        
-        const backdrop = document.getElementById('modalBackdrop');
-        if (backdrop) backdrop.style.display = 'flex';
-    }
-
+    // ✅ Alerts 객체 내부의 openModal 함수를 아래 내용으로 교체하세요.
+	function openModal(item) {
+	    const modalBody = document.getElementById('modalBody');
+	    if (!modalBody) return;
+	
+	    // 심각도 및 타입 클래스 설정
+	    const sevClass = (item.severity === 'CRITICAL') ? 'badge-critical' : 'badge-warning';
+	    const typeClass = 'type-' + String(item.alertType || '').toLowerCase();
+	
+	    // 이미지와 동일한 구조 생성
+	    var html = '<div class="kv-container">';
+	    html += '    <div class="kv">';
+	    
+	    html += '        <div class="k">Alter Type:</div>';
+	    html += '        <div class="v"><span class="type-pill ' + typeClass + '">' + (item.alertType || '-') + '</span></div>';
+	    
+	    html += '        <div class="k">Severity:</div>';
+	    html += '        <div class="v"><span class="badge ' + sevClass + '">' + (item.severity || 'WARNING') + '</span></div>';
+	    
+	    html += '        <div class="k">Content:</div>';
+	    html += '        <div class="v">' + (item.content || '-') + '</div>';
+	    
+	    html += '        <div class="k">Value:</div>';
+	    html += '        <div class="v v-highlight">' + (item.value || '-') + '</div>';
+	    
+	    html += '        <div class="k">Created At:</div>';
+	    html += '        <div class="v">' + (item.createdAt || '-') + '</div>';
+	    
+	    html += '    </div>';
+	    html += '</div>';
+	
+	    modalBody.innerHTML = html;
+	    document.getElementById('modalBackdrop').style.display = 'flex';
+	}
     function closeModal() {
         const backdrop = document.getElementById('modalBackdrop');
         if (backdrop) backdrop.style.display = 'none';
