@@ -25,41 +25,38 @@ const Alerts = {
                 this.fetchAlerts();   
             });
         }
-
-        this.fetchAlerts();
     },
 
     getFilteredAlerts: function() {
         return this.allAlerts || [];
     },
 
-    fetchAlerts: function() {
-        const type = document.getElementById('typeFilter').value;
-        const status = document.getElementById('statusFilter').value;
-        const start = document.getElementById('startDate').value;
-        const end = document.getElementById('endDate').value;
-
-        const tbody = document.getElementById('alertBody');
-        if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:50px;">데이터를 조회 중입니다...</td></tr>`;
-
-        const url = `${contextPath}/getAlertLogs.do?alertType=${type}&severity=${status}&startDate=${start}&endDate=${end}`;
-
-        fetch(url)
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === "success" && Array.isArray(data.logs)) {
-                    this.allAlerts = data.logs; 
-                    this.filteredAlerts = [...this.allAlerts];
-                    this.render(); 
-                } else {
-                    throw new Error("데이터 형식이 올바르지 않습니다.");
-                }
-            })
-            .catch(err => {
-                console.error("데이터 로드 에러:", err);
-                if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red; padding:50px;">조회 실패: ${err.message}</td></tr>`;
-            });
-    },
+    // alert.js 내 fetchAlerts 함수 수정
+	fetchAlerts: function() {
+	    // 1. TYPE과 날짜는 기존대로 화면에서 가져옵니다.
+	    const type = document.getElementById('typeFilter').value;
+	    const start = document.getElementById('startDate').value;
+	    const end = document.getElementById('endDate').value;
+	
+	    // 2. ✅ STATUS 요소가 사라졌으므로, 'ALL'로 값을 고정합니다.
+	    const status = 'ALL'; 
+	
+	    const url = `${contextPath}/getAlertLogs.do?alertType=${type}&severity=${status}&startDate=${start}&endDate=${end}`;
+	
+	    const tbody = document.getElementById('alertBody');
+	    if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:50px;">데이터를 조회 중입니다...</td></tr>`;
+	
+	    fetch(url)
+	        .then(res => res.json())
+	        .then(data => {
+	            if (data.status === "success" && Array.isArray(data.logs)) {
+	                this.allAlerts = data.logs; 
+	                this.filteredAlerts = [...this.allAlerts];
+	                this.render(); 
+	            }
+	        })
+	        .catch(err => console.error("데이터 로드 에러:", err));
+	},
 
     render: function() {
         const start = (this.currentPage - 1) * this.rowsPerPage;

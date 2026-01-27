@@ -40,12 +40,6 @@
                             <option value="LIQUID_SOAP">LIQUID_SOAP</option>
                             <option value="PAPER_TOWEL">PAPER_TOWEL</option>
                         </select>
-                        <span class="filter-label">STATUS:</span>
-                        <select id="statusFilter" class="select">
-                            <option value="ALL">ALL</option>
-                            <option value="WARNING">WARNING</option>
-                            <option value="CRITICAL">CRITICAL</option>
-                        </select>
                     </div>
                     <div class="filter-group">
                         <input type="date" id="startDate" class="input-date">
@@ -88,59 +82,89 @@
     </div>
 
     <script>
-	    var contextPath = "${pageContext.request.contextPath}";
-	
-	    // 1. 페이지 로드 시 날짜 초기화 (오늘 날짜로 세팅)
-	    window.onload = function() {
-	        const today = new Date().toISOString().split('T')[0];
-	        document.getElementById('startDate').value = today;
-	        document.getElementById('endDate').value = today;
-	    };
-	
-	    // 2. 알림 페이지 CSV 다운로드
-	    function downloadAlertCSV() {
-	        // Alerts 객체는 alert.js에서 정의됨 [cite: 2026-01-26]
-	        if (typeof Alerts === 'undefined' || typeof Alerts.getFilteredAlerts !== 'function') {
-	            alert("데이터를 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
-	            return;
-	        }
-	
-	        const allAlerts = Alerts.getFilteredAlerts();
-	
-	        if (!allAlerts || allAlerts.length === 0) {
-	            alert("다운로드할 데이터가 없습니다. 먼저 [조회하기]를 눌러주세요.");
-	            return;
-	        }
-	
-	        let csv = [];
-	        // 헤더 순서: Type, Value, Content, Severity, Created At
-	        csv.push(['"Alert Type"', '"Value"', '"Content"', '"Severity"', '"Created At"'].join(","));
-	
-	        allAlerts.forEach(a => {
-	            const row = [
-	                '"' + (a.alertType || '-') + '"',
-	                '"' + (a.value || '-') + '"',      
-	                '"' + (a.content || '-') + '"',
-	                '"' + (a.severity || '-') + '"',   
-	                '"\'' + (a.createdAt || '-') + '"'
-	            ];
-	            csv.push(row.join(","));
-	        });
-	
-	        const csvContent = "\uFEFF" + csv.join("\n");
-	        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-	        const url = URL.createObjectURL(blob);
-	
-	        const link = document.createElement("a");
-	        const todayStr = new Date().toISOString().slice(0, 10);
-	        link.setAttribute("href", url);
-	        link.setAttribute("download", "SmartRestroom_Alerts_" + todayStr + ".csv");
-	
-	        document.body.appendChild(link);
-	        link.click();
-	        document.body.removeChild(link);
-	    }
-	</script>
+    var contextPath = "${pageContext.request.contextPath}";
+
+    // ✅ 1. 페이지 로드 시 초기화 로직
+    window.onload = function() {
+        const today = new Date().toISOString().split('T')[0];
+        const startDateInput = document.getElementById("startDate");
+        const endDateInput = document.getElementById("endDate");
+        const btnSearch = document.getElementById("btnSearch");
+
+        if (startDateInput && endDateInput) {
+            // [초기화] 시작일과 종료일을 모두 '오늘'로 설정
+            startDateInput.value = today;
+            endDateInput.value = today;
+
+            // [제약] 미래 날짜 선택 방지
+            startDateInput.max = today;
+            endDateInput.max = today;
+
+            // [로직] 시작일 변경 시 종료일 최솟값 제한
+            startDateInput.addEventListener("change", function() {
+                if (startDateInput.value) {
+                    endDateInput.min = startDateInput.value;
+                }
+            });
+
+            // [로직] 종료일 변경 시 시작일 최댓값 제한
+            endDateInput.addEventListener("change", function() {
+                if (endDateInput.value) {
+                    startDateInput.max = endDateInput.value;
+                } else {
+                    startDateInput.max = today;
+                }
+            });
+        }
+
+        // ✅ [핵심] 페이지가 로드되자마자 '조회하기' 버튼을 자동으로 클릭하여 첫 데이터를 불러옵니다.
+        if (btnSearch) {
+            btnSearch.click();
+        }
+    };
+
+    // 2. 알림 페이지 CSV 다운로드 (기존 유지)
+    function downloadAlertCSV() {
+        if (typeof Alerts === 'undefined' || typeof Alerts.getFilteredAlerts !== 'function') {
+            alert("데이터를 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
+            return;
+        }
+
+        const allAlerts = Alerts.getFilteredAlerts();
+
+        if (!allAlerts || allAlerts.length === 0) {
+            alert("다운로드할 데이터가 없습니다. 먼저 [조회하기]를 눌러주세요.");
+            return;
+        }
+
+        let csv = [];
+        csv.push(['"Alert Type"', '"Value"', '"Content"', '"Severity"', '"Created At"'].join(","));
+
+        allAlerts.forEach(a => {
+            const row = [
+                '"' + (a.alertType || '-') + '"',
+                '"' + (a.value || '-') + '"',      
+                '"' + (a.content || '-') + '"',
+                '"' + (a.severity || '-') + '"',   
+                '"\'' + (a.createdAt || '-') + '"'
+            ];
+            csv.push(row.join(","));
+        });
+
+        const csvContent = "\uFEFF" + csv.join("\n");
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        const todayStr = new Date().toISOString().slice(0, 10);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "SmartRestroom_Alerts_" + todayStr + ".csv");
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
     
     <script src="<c:url value='/js/alert.js'/>"></script>
 
