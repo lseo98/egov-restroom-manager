@@ -179,10 +179,10 @@ public class MqttTest {
         String status = "normal";
         String alertType = "";
         String alertTitle = "";
-
-        // DB에서 센서별 임계치(min/max) 및 알림 주기 로드
-        String selectSql = "SELECT min_value, max_value, alert_interval FROM sensor_threshold WHERE sensor_type = ?";
+        String unit = "";
         
+        String selectSql = "SELECT min_value, max_value, alert_interval, unit FROM sensor_threshold WHERE sensor_type = ?";
+
         try (PreparedStatement pstmt = conn.prepareStatement(selectSql)) {
             pstmt.setString(1, type);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -191,24 +191,27 @@ public class MqttTest {
                     double maxVal = rs.getDouble("max_value");
                     int intervalMin = rs.getInt("alert_interval");
                     if (rs.wasNull()) intervalMin = 10;
+                    
+                    unit = rs.getString("unit");
+                    if (rs.wasNull()) unit = "";
 
                     // 상태 판별 로직
                     if (type.equals("NH3")) {
                         // NH3는 주의(min 이상)와 위험(max 이상) 2단계 알림
                         if (value >= maxVal) { 
                             status = "critical";
-                            alertType = "STINK_CRITICAL";
+                            alertType = "NH3";
                             alertTitle = "악취 [위험] 감지";
                         } else if (value >= minVal) {
                             status = "warning";
-                            alertType = "STINK_WARNING";
+                            alertType = "NH3";
                             alertTitle = "악취 [주의] 발생";
                         }
                     } else {
                         // 기타 센서는 범위를 벗어나면 무조건 warning 처리
                         if ((!rs.wasNull() && value < minVal) || (maxVal > 0 && value > maxVal)) {
                             status = "warning";
-                            alertType = type + "_ABNORMAL";
+                            alertType = type;
                             alertTitle = type + " 수치 이상 발생";
                         }
                     }
@@ -218,7 +221,7 @@ public class MqttTest {
                     // 이상 수치 발견 시 알림 주기(dynamicIntervalMs)에 맞춰 알림 생성
                     if (!status.equals("normal")) {
                         long dynamicIntervalMs = intervalMin * 60 * 1000L;
-                        checkAndCreateAlert(alertType, status, alertTitle, "현재값: " + value, dynamicIntervalMs);
+                        checkAndCreateAlert(alertType, status, alertTitle, "현재값: " + value + unit, dynamicIntervalMs);
                     }
                 }
             }
@@ -268,7 +271,7 @@ public class MqttTest {
                 if (rsD.next()) {
                     int count = rsD.getInt("daily_count");
                     if (count > 0 && count % 10 == 0) {
-                    	createAlert("PEOPLE_OVER", "warning", "이용객 누적 알림", "오늘 누적 " + count + "명 돌파");
+                    	createAlert("PEOPLE_IN", "warning", "이용객 누적 알림", "오늘 누적 " + count + "명 돌파");
                     }
                 }
             }
@@ -318,7 +321,7 @@ public class MqttTest {
                     saveToDb(0, typeKey, (double)nextLevel, status);
 
                     if (status.equals("warning")) {
-                    	createAlert("CONSUMABLE_LOW", status, typeKey + " 잔량 부족", "현재 잔량: " + nextLevel + "%");
+                    	createAlert(typeKey, status, typeKey + " 잔량 부족", "현재 잔량: " + nextLevel + "%");
                     }
                 }
             }
@@ -364,26 +367,24 @@ public class MqttTest {
      * 알림 데이터 생성 (설정 테이블의 On/Off 여부 확인 포함)
      */
     private static void createAlert(String type, String severity, String title, String msg) {
-        String sensorType = "";
-        // 알림 타입을 기반으로 설정 테이블 조회용 키 매핑
-        if (type.contains("TEMP")) sensorType = "TEMP";
-        else if (type.contains("HUMIDITY")) sensorType = "HUMIDITY";
-        else if (type.contains("STINK")) sensorType = "NH3";
-        else if (type.contains("PEOPLE")) sensorType = "PEOPLE_IN";
-        else if (type.contains("CONSUMABLE")) sensorType = title.contains("LIQUID_SOAP") ? "LIQUID_SOAP" : "PAPER_TOWEL";
+        String sensorType = type;
         
-        // 사용자가 설정을 껐을 경우 알림 생성 중단
         if (!isAlertEnabled(sensorType)) return;
         
-        String sql = "INSERT INTO alert (alert_type, severity, title, message) VALUES (?, ?, ?, ?)";
+        // ✅ 1. SQL 문에서 컬럼명을 DB와 동일하게 수정 [cite: 2026-01-26]
+        // (title -> content / message -> value)
+        String sql = "INSERT INTO alert (alert_type, severity, content, value) VALUES (?, ?, ?, ?)";
+        
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, type);
-            pstmt.setString(2, severity.toUpperCase()); // WARNING 또는 CRITICAL 저장
-            pstmt.setString(3, title);
-            pstmt.setString(4, msg);
+            pstmt.setString(1, type);           // alert_type
+            pstmt.setString(2, severity.toUpperCase()); // severity
+            pstmt.setString(3, title);          // content (자바 변수명 title은 그대로 써도 무방)
+            pstmt.setString(4, msg);            // value (자바 변수명 msg는 그대로 써도 무방)
+            
             pstmt.executeUpdate();
             System.out.println(">>> [알림 생성] " + title + " [" + severity + "]");
         } catch (Exception e) {
+            // 이제 여기서 "Unknown column" 에러가 나지 않을 거예요! [cite: 2026-01-26]
             System.out.println(">>> [알림 저장 에러] " + e.getMessage());
         }
     }

@@ -107,19 +107,11 @@ public class RestroomController {
      */
     @RequestMapping(value = "/getAlertLogs.do")
     @ResponseBody
-    public Map<String, Object> getAlertLogs(
-            @RequestParam(value="startDate", required=false) String startDate,
-            @RequestParam(value="endDate", required=false) String endDate) throws Exception {
-        
-        // 2. 검색 날짜를 Map에 담아 서비스로 전달
-        Map<String, Object> paramMap = new HashMap<>();
-        paramMap.put("startDate", startDate);
-        paramMap.put("endDate", endDate);
-
+    public Map<String, Object> getAlertLogs(@RequestParam Map<String, Object> paramMap) throws Exception {
         Map<String, Object> result = new HashMap<>();
         try {
-            // 3. 서비스 호출 (알림 이력 전용 메서드)
             List<AlertVO> logs = restroomService.getAlertLogs(paramMap);
+            
             result.put("status", "success");
             result.put("logs", logs);
         } catch (Exception e) {
