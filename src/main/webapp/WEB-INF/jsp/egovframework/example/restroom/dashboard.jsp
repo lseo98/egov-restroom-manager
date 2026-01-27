@@ -51,19 +51,19 @@
                         <div class="status-item" id="tempBox">
                             <span class="material-icons status-icon" style="color:#FF6B6B;">thermostat</span>
                             <span class="label">온도</span>
-                            <div class="value val-temp">${data.temp.value}°C</div>
+                            <div class="value val-temp">${data.temp.value}</div>
                         </div>
 
                         <div class="status-item" id="humBox">
                             <span class="material-icons status-icon" style="color:#0ea5e9;">water_drop</span>
                             <span class="label">습도</span>
-                            <div class="value val-hum">${data.humi.value}%</div>
+                            <div class="value val-hum">${data.humi.value}</div>
                         </div>
 
                         <div class="status-item" id="odorBox">
                             <span class="material-icons status-icon" style="color:#6bcb77;">science</span>
                             <span class="label">악취(NH3)</span>
-                            <div class="value val-odor">${data.nh3.value}ppm</div>
+                            <div class="value val-odor">${data.nh3.value}</div>
                         </div>
                     </div>
 
@@ -239,8 +239,8 @@
         function updateStockBadge(id, current, threshold) {
             var el = document.getElementById(id);
             if (!el) return;
-            var curVal = Number(current) || 0;
-            var thrVal = Number(threshold) || 0;
+            var curVal = parseFloat(current) || 0;
+            var thrVal = parseFloat(threshold) || 0;
             var isLow = curVal <= thrVal;
             el.className = 'stock-badge ' + (isLow ? 'status-insufficient' : 'status-sufficient');
             el.textContent = isLow ? '부족' : '충분';
@@ -258,7 +258,7 @@
 
         function getStatusClass(sensorObj, sensorType) {
             if (!sensorObj || !thresholdMap || !thresholdMap[sensorType]) return '';
-            var v = Number(sensorObj.value);
+            var v = parseFloat(sensorObj.value);
             if (isNaN(v)) return '';
             var th = thresholdMap[sensorType];
             if (sensorType === 'NH3') {
@@ -295,9 +295,9 @@
                         });
                     }
 
-                    if (data.temp) document.querySelector('.val-temp').textContent = data.temp.value + "°C";
-                    if (data.humi) document.querySelector('.val-hum').textContent = data.humi.value + "%";
-                    if (data.nh3)  document.querySelector('.val-odor').textContent = data.nh3.value + "ppm";
+                    if (data.temp) document.querySelector('.val-temp').textContent = data.temp.value;
+                    if (data.humi) document.querySelector('.val-hum').textContent = data.humi.value;
+                    if (data.nh3)  document.querySelector('.val-odor').textContent = data.nh3.value;
 
                     setAlertBox('tempBox', getStatusClass(data.temp, 'TEMP'));
                     setAlertBox('humBox',  getStatusClass(data.humi, 'HUMIDITY'));

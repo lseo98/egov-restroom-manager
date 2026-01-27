@@ -78,7 +78,7 @@ public class MqttTest {
                             double val = json.getDouble("occupancy");
                             String occStatus = (val == 1.0) ? "occupied" : "vacant"; 
                             
-                            saveToDb(stallId, "OCCUPANCY", val, occStatus); 
+                            saveToDb(stallId, "OCCUPANCY", String.valueOf((int) val), occStatus);
                             updateStallStatus(stallId, val == 1.0);
                         }
                         
@@ -94,7 +94,7 @@ public class MqttTest {
                             if (regions.length() > 0) {
                                 int currentTotal = regions.getJSONObject(0).getInt("current_total");
                                 // PEOPLE_IN 데이터는 별도의 상태 없이 저장
-                                saveToDb(0, "PEOPLE_IN", (double)currentTotal, null);
+                                saveToDb(0, "PEOPLE_IN", String.valueOf(currentTotal), null);
                                 for(int i=0; i < currentTotal; i++) {
                                     updateVisitorStats();
                                 }
@@ -215,8 +215,9 @@ public class MqttTest {
                             alertTitle = type + " 수치 이상 발생";
                         }
                     }
-
-                    saveToDb(0, type, value, status);
+                    
+                    String valueWithUnit = value + unit;
+                    saveToDb(0, type, valueWithUnit, status);
 
                     // 이상 수치 발견 시 알림 주기(dynamicIntervalMs)에 맞춰 알림 생성
                     if (!status.equals("normal")) {
@@ -318,7 +319,7 @@ public class MqttTest {
                     psUpdate.setString(2, typeKey);
                     psUpdate.executeUpdate();
                     
-                    saveToDb(0, typeKey, (double)nextLevel, status);
+                    saveToDb(0, typeKey, nextLevel + "%", status);
 
                     if (status.equals("warning")) {
                     	createAlert(typeKey, status, typeKey + " 잔량 부족", "현재 잔량: " + nextLevel + "%");
@@ -333,13 +334,13 @@ public class MqttTest {
     /**
      * 센서 데이터를 DB(sensor_reading)에 저장
      */
-    private static void saveToDb(int stallId, String type, double value, String status) {
+    private static void saveToDb(int stallId, String type, String value, String status) {
         String sql = "INSERT INTO sensor_reading (stall_id, sensor_type, value, status) VALUES (?, ?, ?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) { 
             if (stallId > 0) pstmt.setInt(1, stallId); 
             else pstmt.setNull(1, java.sql.Types.INTEGER); 
             pstmt.setString(2, type);
-            pstmt.setDouble(3, value);
+            pstmt.setString(3, value);
             pstmt.setString(4, status);
             pstmt.executeUpdate();
             

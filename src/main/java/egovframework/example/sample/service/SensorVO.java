@@ -5,7 +5,7 @@ public class SensorVO {
     private Integer stallId;    // 센서가 설치된 칸 번호 (없을 수 있음)
     private String status;
     private String sensorType;  // 센서 종류 (TEMP, HUMIDITY, NH3)
-    private double value;       // 측정값
+    private String value;       // 측정값
     private String readingTime; // 측정 시간
 
     public int getReadingId() {
@@ -32,10 +32,10 @@ public class SensorVO {
     public void setSensorType(String sensorType) {
         this.sensorType = sensorType;
     }
-    public double getValue() {
+    public String getValue() {
         return value;
     }
-    public void setValue(double value) {
+    public void setValue(String value) {
         this.value = value;
     }
     public String getReadingTime() {

@@ -91,10 +91,12 @@
     border-radius: 4px;
     padding: 2px 8px; /* 높이 축소 핵심 */
     font-size: 12px;
+    font-weight:400;
     color: #1e293b;
     background-color: #ffffff;
     outline: none;
     height: 26px; /* 높이 고정 */
+  	line-height:1.2;
 }
 
 .date-sep {
