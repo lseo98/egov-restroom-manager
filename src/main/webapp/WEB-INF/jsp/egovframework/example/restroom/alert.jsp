@@ -34,7 +34,6 @@
                             <option value="ALL">ALL</option>
                             <option value="TEMP">TEMP</option>
                             <option value="HUMIDITY">HUMIDITY</option>
-                            <option value="OCCUPANCY">OCCUPANCY</option>
                             <option value="NH3">NH3</option>
                             <option value="PEOPLE_IN">PEOPLE_IN</option>
                             <option value="LIQUID_SOAP">LIQUID_SOAP</option>
