@@ -15,7 +15,7 @@
     html, body {
       margin: 0 !important; padding: 0 !important;
       height: 100% !important; overflow: hidden !important;
-      background: #F8FAFC !important; 
+      background: #f6f7fb !important;  /*배경색 변경 */
       font-family: 'Noto Sans KR', sans-serif;
     }
 
