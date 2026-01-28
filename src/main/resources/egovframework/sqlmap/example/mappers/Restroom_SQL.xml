@@ -38,7 +38,7 @@
             visit_count AS visitCount, 
             yesterday_count AS yesterdayCount
         FROM hourly_stats
-        WHERE hour_id BETWEEN 9 AND HOUR(NOW())
+        WHERE hour_id BETWEEN 8 AND HOUR(NOW())
         ORDER BY hour_id
     </select>
 
