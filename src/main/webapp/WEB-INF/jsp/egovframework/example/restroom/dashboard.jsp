@@ -302,6 +302,26 @@
                     setAlertBox('tempBox', getStatusClass(data.temp, 'TEMP'));
                     setAlertBox('humBox',  getStatusClass(data.humi, 'HUMIDITY'));
                     setAlertBox('odorBox', getStatusClass(data.nh3,  'NH3'));
+                    
+                 	// ✅ 추가: 차트 데이터 실시간 업데이트
+                    if (data.hourlyStats && occChart) {
+                        var newL = [], newV_today = [], newV_yesterday = [];
+                        
+                        data.hourlyStats.forEach(function(h) {
+                            newL.push(h.hourId + "시");
+                            newV_today.push(h.visitCount);
+                            newV_yesterday.push(h.yesterdayCount);
+                        });
+
+                        // ECharts는 데이터만 바꿔서 setOption을 호출하면 자동으로 바뀐 부분만 다시 그립니다.
+                        occChart.setOption({
+                            xAxis: { data: newL },
+                            series: [
+                                { name: '오늘', data: newV_today },
+                                { name: '어제', data: newV_yesterday }
+                            ]
+                        });
+                    }
 
                     // ✅ 소모품 업데이트: 이미지 테이블 구조에 따라 st.threshold(DB 실제값) 사용
                     if (data.stocks) {
